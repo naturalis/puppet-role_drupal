@@ -35,7 +35,7 @@ Dependencies
 - binford2k/binford2k-drupal 0.0.4  <- forked@naturalis for mysql-php binding fix
 - thias/php
 
-```
+
 Puppet code
 ```
 class { role_drupal: }
