@@ -42,7 +42,7 @@ class { role_drupal: }
 ```
 Result
 -------------
-Working webserver with mysql and drupal installation.
+Working webserver with mysql and drupal installation. Additional module installation and hourly cronjobs
 
 
 Limitations

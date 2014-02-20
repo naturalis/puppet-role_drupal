@@ -15,6 +15,36 @@ class role_drupal (
   $drushversion        = '7.x-5.9',
   $extra_users_hash    = undef,
   $mysql_root_password = 'rootpassword',
+  $modules             = ['token',
+                          'ctools',
+                          'rules',
+                          'views',
+                          'context',
+                          'features',
+                          'boxes',
+                          'module_filter',
+                          'pathauto',
+                          'boost',
+                          'google_analytics',
+                          'i18n',
+                          'panels',
+                          'ckeditor',
+                          'admin_menu',
+                          'field_group',
+                          'node_reference',
+                          'webform',
+                          'libraries',
+                          'smtp',
+                          'menutree',
+                          'contact',
+                          'i18n_translation',
+                          'references',
+                          'page_manager',
+                          'translation',
+                          'i18n_string'],
+  $cron                = true,
+  $CKEditor            = true,
+  $CKEditorURL         = 'http://download.cksource.com/CKEditor/CKEditor/CKEditor%204.3.2/ckeditor_4.3.2_standard.zip',
   $instances           = {'site.drupalsites.nl' => {
                            'serveraliases'   => '*.drupalsites.nl',
                            'docroot'         => '/var/www/sisdrupal',
@@ -38,7 +68,7 @@ class role_drupal (
       'apc.rfc1867'      => '1',
       'apc.enabled'      => '1',
       'apc.shm_segments' => '1',
-      'apc.shm_size'     => '64',
+      'apc.shm_size'     => '64M',
     }
   }
 
@@ -49,7 +79,7 @@ class role_drupal (
   include apache::mod::php
   include apache::mod::rewrite
 
-
+# main drupal download and installation
   if ($configuredrupal == true) {
     # Create instance, install php modules and download+untar drupal in specific order.
     class { 'role_drupal::instances': 
@@ -76,9 +106,38 @@ class role_drupal (
       drushversion   => $drushversion,
       require        => Exec['install drupal manual'],
     }->
+    drupal_module { $modules:
+      ensure => present,
+    }->
     class { 'mysql::server::account_security':}
     class { 'mysql::server':
       root_password  => $mysql_root_password,
+    }
+  }
+
+# download and install CKEditor
+  if ($CKEditor == true) {
+    exec { 'download and unpack CKEditor':
+      command => "/usr/bin/curl ${CKEditorURL} -o /tmp/ckeditor.zip && /usr/bin/unzip /tmp/ckeditor.zip -d ${docroot}/sites/all/modules/ckeditor",
+      unless  => "/usr/bin/test -f ${docroot}/sites/all/modules/ckeditor/ckeditor/ckeditor.js",
+      require => Drupal_module['ckeditor'],
+    }
+  }
+
+# custom folder settings, needed for boost module
+  file { "${docroot}/cache/normal":
+    ensure      => 'directory',
+    mode        => '0755',
+    owner       => 'www-data',
+    require     => File[$docroot],
+  }
+
+# run cron job every hour
+  if ($CKEditor == true) {
+    cron { logrotate:
+      command => "/usr/local/bin/drush @sites core-cron --yes",
+      user    => root,
+      minute  => 0
     }
   }
 }
