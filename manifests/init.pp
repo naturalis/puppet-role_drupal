@@ -31,7 +31,6 @@ class role_drupal (
                           'ckeditor',
                           'admin_menu',
                           'field_group',
-                          'node_reference',
                           'webform',
                           'libraries',
                           'smtp',
@@ -79,12 +78,13 @@ class role_drupal (
   include apache::mod::php
   include apache::mod::rewrite
 
-# main drupal download and installation
-  if ($configuredrupal == true) {
-    # Create instance, install php modules and download+untar drupal in specific order.
+# Create instance, install php modules and download+untar drupal in specific order.
     class { 'role_drupal::instances': 
       instances => $instances,
-    }->
+    }
+
+# main drupal download and installation
+  if ($configuredrupal == true) {
     exec { 'download drupal and untar drupal':
       command => "/usr/bin/curl http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -o /tmp/drupal-${drupalversion}.tar.gz && /bin/tar -xf /tmp/drupal-${drupalversion}.tar.gz -C /tmp",
       unless  => "/usr/bin/test -d ${docroot}/sites",
@@ -113,31 +113,34 @@ class role_drupal (
     class { 'mysql::server':
       root_password  => $mysql_root_password,
     }
-  }
-
 # download and install CKEditor
-  if ($CKEditor == true) {
-    exec { 'download and unpack CKEditor':
-      command => "/usr/bin/curl ${CKEditorURL} -o /tmp/ckeditor.zip && /usr/bin/unzip /tmp/ckeditor.zip -d ${docroot}/sites/all/modules/ckeditor",
-      unless  => "/usr/bin/test -f ${docroot}/sites/all/modules/ckeditor/ckeditor/ckeditor.js",
-      require => Drupal_module['ckeditor'],
+    if ($CKEditor == true) {
+      exec { 'download and unpack CKEditor':
+        command => "/usr/bin/curl ${CKEditorURL} -o /tmp/ckeditor.zip && /usr/bin/unzip /tmp/ckeditor.zip -d ${docroot}/sites/all/modules/ckeditor",
+        unless  => "/usr/bin/test -f ${docroot}/sites/all/modules/ckeditor/ckeditor/ckeditor.js",
+        require => Drupal_module['ckeditor'],
+      }
     }
-  }
 
 # custom folder settings, needed for boost module
-  file { "${docroot}/cache/normal":
-    ensure      => 'directory',
-    mode        => '0755',
-    owner       => 'www-data',
-    require     => File[$docroot],
-  }
+    file { "${docroot}/cache/normal":
+      ensure      => 'directory',
+      mode        => '0755',
+      owner       => 'www-data',
+      require     => File[$docroot],
+    }
 
 # run cron job every hour
-  if ($cron == true) {
-    cron { 'drupal hourly cronjob':
-      command => "/usr/local/bin/drush @sites core-cron --yes",
-      user    => root,
-      minute  => 0
+    if ($cron == true) {
+      cron { 'drupal hourly cronjob':
+        command => "/usr/local/bin/drush @sites core-cron --yes",
+        user    => root,
+        minute  => 0
+      }
     }
+
   }
+
+
+
 }
