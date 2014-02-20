@@ -7,6 +7,7 @@ Parameters
 -------------
 Sensible defaults for Naturalis in init.pp, extra_users_hash for additional SSH users. 
 admin password will be reported during installation, when installation is done unattended then search in /var/log/syslog for the text:  Installation complete.  User name: admin  User password: <password here>
+```
 - configuredrupal             Main installation part, advised to be set to false after installation is complete, modules tend to be re-enabled during every puppet run. 
 - dbpassword                  Drupal database password
 - docroot                     Documentroot, match location with 'docroot' part of the instances parameter
@@ -19,7 +20,9 @@ admin password will be reported during installation, when installation is done u
 - CKEditor                    Enable download of CKEditor, requires module: ckeditor
 - CKEditorURL                 Download URL for CKEditor 
 - instances                   Apache vhost configuration array
+```
 
+example extra_users_hash
 ```
 role_drupalng::extra_users_hash:
   user1:
