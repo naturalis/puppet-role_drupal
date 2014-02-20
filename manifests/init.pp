@@ -133,8 +133,8 @@ class role_drupal (
   }
 
 # run cron job every hour
-  if ($CKEditor == true) {
-    cron { logrotate:
+  if ($cron == true) {
+    cron { 'drupal hourly cronjob':
       command => "/usr/local/bin/drush @sites core-cron --yes",
       user    => root,
       minute  => 0
