@@ -86,12 +86,13 @@ class role_drupal (
 # main drupal download and installation
   if ($configuredrupal == true) {
     exec { 'download drupal and untar drupal':
-      command => "/usr/bin/curl http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -o /tmp/drupal-${drupalversion}.tar.gz && /bin/tar -xf /tmp/drupal-${drupalversion}.tar.gz -C /tmp",
-      unless  => "/usr/bin/test -d ${docroot}/sites",
+      command        => "/usr/bin/curl http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -o /tmp/drupal-${drupalversion}.tar.gz && /bin/tar -xf /tmp/drupal-${drupalversion}.tar.gz -C /tmp",
+      unless         => "/usr/bin/test -d ${docroot}/sites",
     }->
     exec { 'install drupal manual':
-      command => "/bin/mv /tmp/drupal-${drupalversion}/* ${docroot}",
-      unless  => "/usr/bin/test -d ${docroot}/sites",
+      command        => "/bin/mv /tmp/drupal-${drupalversion}/* ${docroot}",
+      unless         => "/usr/bin/test -d ${docroot}/sites",
+      require        => File[$docroot],
     }->
     class { 'drupal':
       installtype    => 'remote',
@@ -107,7 +108,7 @@ class role_drupal (
       require        => Exec['install drupal manual'],
     }->
     drupal_module { $modules:
-      ensure => present,
+      ensure         => present,
     }->
     class { 'mysql::server::account_security':}
     class { 'mysql::server':
@@ -116,9 +117,9 @@ class role_drupal (
 # download and install CKEditor
     if ($CKEditor == true) {
       exec { 'download and unpack CKEditor':
-        command => "/usr/bin/curl ${CKEditorURL} -o /tmp/ckeditor.zip && /usr/bin/unzip /tmp/ckeditor.zip -d ${docroot}/sites/all/modules/ckeditor",
-        unless  => "/usr/bin/test -f ${docroot}/sites/all/modules/ckeditor/ckeditor/ckeditor.js",
-        require => Drupal_module['ckeditor'],
+        command      => "/usr/bin/curl ${CKEditorURL} -o /tmp/ckeditor.zip && /usr/bin/unzip /tmp/ckeditor.zip -d ${docroot}/sites/all/modules/ckeditor",
+        unless       => "/usr/bin/test -f ${docroot}/sites/all/modules/ckeditor/ckeditor/ckeditor.js",
+        require      => Drupal_module['ckeditor'],
       }
     }
 
