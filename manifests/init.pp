@@ -123,7 +123,7 @@ class role_drupal (
     }
 
 # custom folder settings, needed for boost module
-    file { "${docroot}/cache/normal":
+    file { ["${docroot}/cache","${docroot}/cache/normal"]:
       ensure      => 'directory',
       mode        => '0755',
       owner       => 'www-data',
