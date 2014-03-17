@@ -15,32 +15,7 @@ class role_drupal (
   $drushversion        = '7.x-5.9',
   $extra_users_hash    = undef,
   $mysql_root_password = 'rootpassword',
-  $modules             = ['token',
-                          'ctools',
-                          'rules',
-                          'views',
-                          'context',
-                          'features',
-                          'boxes',
-                          'module_filter',
-                          'pathauto',
-                          'boost',
-                          'google_analytics',
-                          'i18n',
-                          'panels',
-                          'ckeditor',
-                          'admin_menu',
-                          'field_group',
-                          'webform',
-                          'libraries',
-                          'smtp',
-                          'menutree',
-                          'contact',
-                          'i18n_translation',
-                          'references',
-                          'page_manager',
-                          'translation',
-                          'i18n_string'],
+  $modules             = ['token','ctools','rules','views','context','features','boxes','module_filter','pathauto','boost','google_analytics','i18n','panels','ckeditor','admin_menu','field_group','webform','libraries','smtp','menutree','contact','references','translation'],
   $cron                = true,
   $CKEditor            = true,
   $CKEditorURL         = 'http://download.cksource.com/CKEditor/CKEditor/CKEditor%204.3.2/ckeditor_4.3.2_standard.zip',
@@ -61,7 +36,11 @@ class role_drupal (
   }
 
 # install php and configure php.ini
-  php::module { [ 'gd','apc']: }
+  php::module { [ 'gd','apc', 'curl']: }
+  php::ini { '/etc/php.ini':
+  } ->
+  class { 'php::cli':
+  }
   php::module::ini { 'pecl-apc':
     settings => {
       'apc.rfc1867'      => '1',
@@ -106,20 +85,23 @@ class role_drupal (
       drupalversion  => $drupalversion,
       drushversion   => $drushversion,
       require        => Exec['install drupal manual'],
-    }->
-    drupal_module { $modules:
-      ensure         => present,
-    }->
-    class { 'mysql::server::account_security':}
+    } 
+    class { 'mysql::server::account_security':} 
     class { 'mysql::server':
       root_password  => $mysql_root_password,
-    }
+    } 
+    role_drupal::modules{$modules:}
+
 # download and install CKEditor
     if ($CKEditor == true) {
+      package { 'unzip':
+        ensure       => installed
+      }
       exec { 'download and unpack CKEditor':
         command      => "/usr/bin/curl ${CKEditorURL} -o /tmp/ckeditor.zip && /usr/bin/unzip /tmp/ckeditor.zip -d ${docroot}/sites/all/modules/ckeditor",
         unless       => "/usr/bin/test -f ${docroot}/sites/all/modules/ckeditor/ckeditor/ckeditor.js",
-        require      => Drupal_module['ckeditor'],
+        onlyif       => "/usr/bin/test -d ${docroot}/sites/all/modules/ckeditor",
+        require      => Package['unzip']
       }
     }
 
