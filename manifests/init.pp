@@ -11,7 +11,8 @@ class role_drupal (
   $configuredrupal     = true,
   $dbpassword          = 'password',
   $docroot             = '/var/www/sisdrupal',
-  $drupalversion       = '7.26',
+  $drupalversion       = '7.28',
+  $drupalupdate        = undef,
   $drushversion        = '7.x-5.9',
   $extra_users_hash    = undef,
   $mysql_root_password = 'rootpassword',
@@ -84,6 +85,7 @@ class role_drupal (
       managevhost    => false,
       drupalversion  => $drupalversion,
       drushversion   => $drushversion,
+      update         => $drupalupdate,
       require        => Exec['install drupal manual'],
     } 
     class { 'mysql::server::account_security':} 
