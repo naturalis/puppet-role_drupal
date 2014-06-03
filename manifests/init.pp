@@ -8,6 +8,7 @@
 #
 #
 class role_drupal (
+  $enablessl           = false,
   $configuredrupal     = true,
   $dbpassword          = 'password',
   $docroot             = '/var/www/sisdrupal',
@@ -57,6 +58,13 @@ class role_drupal (
   }
   include apache::mod::php
   include apache::mod::rewrite
+
+  if ($enablessl == true) {
+    class { 'apache::mod::ssl':
+      ssl_compression => false,
+      ssl_options     => [ 'StdEnvVars' ],
+    }
+  }
 
 # Create instance, install php modules and download+untar drupal in specific order.
     class { 'role_drupal::instances': 
