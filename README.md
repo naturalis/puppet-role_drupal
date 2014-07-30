@@ -7,8 +7,9 @@ Parameters
 -------------
 Sensible defaults for Naturalis in init.pp, extra_users_hash for additional SSH users. 
 admin password will be reported during installation, when installation is done unattended then search in /var/log/syslog for the text:  Installation complete.  User name: admin  User password: <password here>
+
 ```
-- configuredrupal             Main installation part, advised to be set to false after installation is complete, modules tend to be re-enabled during every puppet run. 
+- configuredrupal             Main installation part, advised to be set to false after installation is complete. If set to true and a non working drupal installation is found ( for example due to incorrect module ) then a complete reinstallation of drupal including a complete db drop is initiated.
 - enablessl                   Enable apache SSL modules, see SSL example
 - dbpassword                  Drupal database password
 - docroot                     Documentroot, match location with 'docroot' part of the instances parameter
@@ -36,8 +37,10 @@ role_drupal::extra_users_hash:
 ```
 
 
-example ssl enables virtual hosts with http to https redirect. 
 ```
+example ssl enabled virtual hosts with http to https redirect.
+```
+role_drupal::enablessl: true
 role_drupal::instances:
 site-with-ssl.drupalsites.nl: 
   serveraliases: "*.drupalsites.nl"

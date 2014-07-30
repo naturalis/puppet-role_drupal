@@ -35,7 +35,6 @@ class role_drupal (
   $modules             = undef,
   $CKEditor            = undef,
   $CKEditorURL         = undef,
-
 ){
 
 # create extra users
