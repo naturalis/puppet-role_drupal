@@ -31,7 +31,7 @@ class role_drupal (
                                  'priority'        => 10,
                                 },
                                },
-  # variables needed for foreman compatibility with produktion environment
+  # variables needed for foreman compatibility with production environment
   $modules             = undef,
   $CKEditor            = undef,
   $CKEditorURL         = undef,
