@@ -8,32 +8,44 @@
 #
 #
 class role_drupal (
-  $configuredrupal     = true,
-  $dbpassword          = 'password',
-  $docroot             = '/var/www/sisdrupal',
-  $drupalversion       = '7.28',
-  $drupalupdate        = undef,
-  $drushversion        = '7.x-5.9',
-  $extra_users_hash    = undef,
-  $mysql_root_password = 'rootpassword',
-  $modules             = ['token','ctools','rules','views','context','features','boxes','module_filter','pathauto','boost','google_analytics','i18n','panels','ckeditor','admin_menu','field_group','webform','libraries','smtp','menutree','contact','references','translation'],
-  $cron                = true,
-  $CKEditor            = true,
-  $CKEditorURL         = 'http://download.cksource.com/CKEditor/CKEditor/CKEditor%204.3.2/ckeditor_4.3.2_standard.zip',
-  $instances           = {'site.drupalsites.nl' => {
-                           'serveraliases'   => '*.drupalsites.nl',
-                           'docroot'         => '/var/www/sisdrupal',
-                           'directories'     => [{ 'path' => '/var/www/sisdrupal', 'options' => '-Indexes FollowSymLinks MultiViews', 'allow_override' => 'All' }],
-                           'port'            => 80,
-                           'serveradmin'     => 'webmaster@naturalis.nl',
-                           'priority'        => 10,
-                          },
-                         },
+  $enablessl                    = false,
+  $configuredrupal              = true,
+  $dbpassword                   = 'password',
+  $docroot                      = '/var/www/sisdrupal',
+  $drupalversion                = '7.30',
+  $drupalupdate                 = undef,
+  $drushversion                 = '7.x-5.9',
+  $extra_users_hash             = undef,
+  $mysql_root_password          = 'rootpassword',
+  $cron                         = true,
+  $install_profile              = 'naturalis',
+  $install_profile_repo         = 'svn://dev2.etibioinformatics.nl/drupal_naturalis_installation_profile',
+  $install_profile_repoversion  = 'present',
+  $install_profile_repotype     = 'svn',
+  $instances                    = {'site.drupalsites.nl' => {
+                                 'serveraliases'   => '*.drupalsites.nl',
+                                 'docroot'         => '/var/www/sisdrupal',
+                                 'directories'     => [{ 'path' => '/var/www/sisdrupal', 'options' => '-Indexes FollowSymLinks MultiViews', 'allow_override' => 'All' }],
+                                 'port'            => 80,
+                                 'serveradmin'     => 'webmaster@naturalis.nl',
+                                 'priority'        => 10,
+                                },
+                               },
+  # variables needed for foreman compatibility with produktion environment
+  $modules             = undef,
+  $CKEditor            = undef,
+  $CKEditorURL         = undef,
+
 ){
 
 # create extra users
   if $extra_users_hash {
     create_resources('base::users', parseyaml($extra_users_hash))
+  }
+
+# install subversion
+  package { 'subversion':
+    ensure => installed,
   }
 
 # install php and configure php.ini
@@ -58,6 +70,13 @@ class role_drupal (
   include apache::mod::php
   include apache::mod::rewrite
 
+  if ($enablessl == true) {
+    class { 'apache::mod::ssl':
+      ssl_compression => false,
+      ssl_options     => [ 'StdEnvVars' ],
+    }
+  }
+
 # Create instance, install php modules and download+untar drupal in specific order.
     class { 'role_drupal::instances': 
       instances => $instances,
@@ -69,9 +88,20 @@ class role_drupal (
       command        => "/usr/bin/curl http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -o /tmp/drupal-${drupalversion}.tar.gz && /bin/tar -xf /tmp/drupal-${drupalversion}.tar.gz -C /tmp",
       unless         => "/usr/bin/test -d ${docroot}/sites",
     }->
+    vcsrepo { "/tmp/naturalisprofile":
+      ensure   => $install_profile_repoversion,
+      provider => $install_profile_repotype,
+      source   => $install_profile_repo,
+      require  => Package['subversion'],
+    }->
     exec { 'install drupal manual':
       command        => "/bin/mv /tmp/drupal-${drupalversion}/* ${docroot}",
       unless         => "/usr/bin/test -d ${docroot}/sites",
+      require        => File[$docroot],
+    }->
+    exec { 'install drupal manual profile':
+      command        => "/bin/mv /tmp/naturalisprofile/trunk/* ${docroot}/profiles",
+      unless         => "/usr/bin/test -d ${docroot}/profiles/naturalis",
       require        => File[$docroot],
     }->
     class { 'drupal':
@@ -86,26 +116,14 @@ class role_drupal (
       drupalversion  => $drupalversion,
       drushversion   => $drushversion,
       update         => $drupalupdate,
+      install_profile => $install_profile,
       require        => Exec['install drupal manual'],
     } 
     class { 'mysql::server::account_security':} 
     class { 'mysql::server':
       root_password  => $mysql_root_password,
     } 
-    role_drupal::modules{$modules:}
-
-# download and install CKEditor
-    if ($CKEditor == true) {
-      package { 'unzip':
-        ensure       => installed
-      }
-      exec { 'download and unpack CKEditor':
-        command      => "/usr/bin/curl ${CKEditorURL} -o /tmp/ckeditor.zip && /usr/bin/unzip /tmp/ckeditor.zip -d ${docroot}/sites/all/modules/ckeditor",
-        unless       => "/usr/bin/test -f ${docroot}/sites/all/modules/ckeditor/ckeditor/ckeditor.js",
-        onlyif       => "/usr/bin/test -d ${docroot}/sites/all/modules/ckeditor",
-        require      => Package['unzip']
-      }
-    }
+#    }
 
 # custom folder settings, needed for boost module
     file { ["${docroot}/cache","${docroot}/cache/normal"]:
