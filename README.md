@@ -38,6 +38,7 @@ role_drupal::extra_users_hash:
 
 
 example ssl enabled virtual hosts with http to https redirect.
+
 ```
 role_drupal::enablessl: true
 role_drupal::instances:
