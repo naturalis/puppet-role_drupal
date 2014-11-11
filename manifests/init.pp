@@ -26,7 +26,7 @@ class role_drupal (
   $instances                    = {'site.drupalsites.nl' => {
                                  'serveraliases'   => '*.drupalsites.nl',
                                  'docroot'         => '/var/www/sisdrupal',
-                                 'directories'     => [{ 'path' => '/var/www/sisdrupal', 'options' => '-Indexes FollowSymLinks MultiViews', 'allow_override' => 'All' }],
+                                 'directories'     => [{ 'path' => '/var/www/sisdrupal', 'options' => '-Indexes +FollowSymLinks +MultiViews', 'allow_override' => 'All' }],
                                  'port'            => 80,
                                  'serveradmin'     => 'webmaster@naturalis.nl',
                                  'priority'        => 10,
