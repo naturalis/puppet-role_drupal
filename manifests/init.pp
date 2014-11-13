@@ -13,7 +13,8 @@ class role_drupal (
   $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
   $drupalversion                = '7.32',
-  $drupalupdate                 = undef,
+  $updateall                    = false,        # all updates, requires updatesecurity = true
+  $updatesecurity               = true,         # only security updates
   $drushversion                 = '7.x-5.9',
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
@@ -24,6 +25,7 @@ class role_drupal (
   $install_profile_repoversion  = 'present',
   $install_profile_reposshauth  = true,
   $install_profile_repokey      = undef,
+  $install_profile_repokeyname  = 'githubkey',
   $install_profile_repotype     = 'git',
   $instances                    = {'site.drupalsites.nl' => {
                                  'serveraliases'   => '*.drupalsites.nl',
@@ -36,27 +38,22 @@ class role_drupal (
                                },
 ){
 
-
-# ensure git package for repo checkouts
-  package { 'git':
-    ensure => installed,
-  }
-
 # install php and configure php.ini
   php::module { [ 'gd','apc', 'curl']: }
   php::ini { '/etc/php.ini':
     memory_limit   => $php_memory_limit,
-  } ->
+  }->
   class { 'php::cli':
   }
-#  php::module::ini { 'pecl-apc':
-#    settings => {
-#      'apc.rfc1867'      => '1',
-#      'apc.enabled'      => '1',
-#      'apc.shm_segments' => '1',
-#      'apc.shm_size'     => '64M',
-#    }
-#  }
+  php::module::ini { 'pecl-apcu':
+    prefix   => '20',
+    settings => {
+      'apc.rfc1867'      => '1',
+      'apc.enabled'      => '1',
+      'apc.shm_segments' => '1',
+      'apc.shm_size'     => '64M',
+    }
+  }
 
   class { 'apache':
     default_mods => true,
@@ -77,35 +74,18 @@ class role_drupal (
       instances => $instances,
     }
 
-
+# clone repository when userepo == true
   if ( $install_profile_userepo == true ) {
-    if ( $install_profile_reposshauth == false ) {
-      vcsrepo { "/tmp/naturalisprofile":
-        ensure    => $install_profile_repoversion,
-        provider  => $install_profile_repotype,
-        source    => $install_profile_repo,
-        require   => Package['git'],
-      }
-    } else {
-      file { '/root/.ssh':
-        ensure    => directory,
-      }->
-      file { '/root/.ssh/id_rsa':
-        ensure    => "present",
-        content   => $install_profile_repokey,
-        mode      => 600,
-      }->
-      vcsrepo { "/tmp/naturalisprofile":
-        ensure    => $install_profile_repoversion,
-        provider  => $install_profile_repotype,
-        source    => $install_profile_repo,
-        user      => 'root',
-        force     => true,
-        require   => Package['git'],
-      }
+    class { 'role_drupal::repo':
+      install_profile               => $install_profile,
+      install_profile_repo          => $install_profile_repo,
+      install_profile_repoversion   => $install_profile_repoversion,
+      install_profile_reposshauth   => $install_profile_reposshauth,
+      install_profile_repokey       => $install_profile_repokey,
+      install_profile_repokeyname   => $install_profile_repokeyname,
+      install_profile_repotype      => $install_profile_repotype,
     }
   }
-
 
 # main drupal download and installation
   if ($configuredrupal == true) {
@@ -119,7 +99,7 @@ class role_drupal (
       require        => [File[$docroot],Vcsrepo["/tmp/naturalisprofile"]]
     }->
     exec { 'install drupal manual profile':
-      command        => "/bin/mv /tmp/naturalisprofile/trunk/* ${docroot}/profiles",
+      command        => "/bin/mv /tmp/naturalisprofile/* ${docroot}/profiles",
       unless         => "/usr/bin/test -d ${docroot}/profiles/naturalis",
       require        => File[$docroot],
     }->
@@ -158,6 +138,13 @@ class role_drupal (
         user    => root,
         minute  => 0
       }
+    }
+  }
+
+# clone repository when userepo == true
+  if ( $updatesecurity == true ) {
+    class { 'role_drupal::update':
+      updateall     => $updateall,
     }
   }
 }
