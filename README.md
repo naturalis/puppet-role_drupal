@@ -5,7 +5,7 @@ Puppet role definition for deployment of drupal software
 
 Parameters
 -------------
-Sensible defaults for Naturalis in init.pp, extra_users_hash for additional SSH users. 
+Sensible defaults for Naturalis in init.pp.
 admin password will be reported during installation, when installation is done unattended then search in /var/log/syslog for the text:  Installation complete.  User name: admin  User password: <password here>
 
 ```
@@ -17,11 +17,22 @@ admin password will be reported during installation, when installation is done u
 - drushversion                Drush version
 - mysql_root_password         Root password for mysql server
 - cron                        Enable hourly cronjob for drupal installation. 
+- updateall                   Keep system up to date using drush up, all updates, requires updatesecurity = true
+- updatesecurity              only update security 
+- php_memory_limit            Sets PHP memory limit
+- install_profile_userepo     Use repository for install profile
+- install_profile             Install profile name
+- install_profile_repo        repo location, use SSH location when using private repo
+- install_profile_repoversion verion of repo
+- install_profile_reposshauth use SSH authentication for github
+- install_profile_repokey     Private key for authentication
+- install_profile_repokeyname name of private key
+- install_profile_repotype    repo type
 - instances                   Apache vhost configuration array
 ```
 
 
-example ssl enabled virtual hosts with http to https redirect.
+example ssl enabled virtual hosts with http to https redirect, see init.pp for more example values
 
 ```
 role_drupal::enablessl: true
@@ -53,6 +64,8 @@ Classes
 -------------
 - role_drupal
 - role_drupal::instances
+- role_drupal::repo
+- role_drupal::update
 
 Dependencies
 -------------
@@ -61,7 +74,7 @@ Dependencies
 - puppetlabs/vcsrepo
 - puppetlabs/concat
 - binford2k/binford2k-drupal 0.0.4  <- forked@naturalis for mysql-php binding fix
-- thias/php
+- naturalis/puppet-php <- forked from thias/puppet-php modified for Ubuntu 14.04 compatibility
 
 
 Puppet code
@@ -70,8 +83,9 @@ class { role_drupal: }
 ```
 Result
 -------------
-Working webserver with mysql and drupal installation. Additional module installation and hourly cronjobs are also installed by default.
+Working webserver with mysql and drupal installation with custom installation profile. Additional module installation and hourly cronjobs are also installed by default.
 Additional php modules: gd and apc are installed and pecl-apc is also configured so drupal upload status bars are allowed. 
+automatic updates using drush can be enabled. 
 
 Limitations
 -------------

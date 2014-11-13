@@ -12,7 +12,7 @@ class role_drupal (
   $configuredrupal              = true,
   $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.32',
+  $drupalversion                = '7.33',
   $updateall                    = false,        # all updates, requires updatesecurity = true
   $updatesecurity               = true,         # only security updates
   $drushversion                 = '7.x-5.9',
