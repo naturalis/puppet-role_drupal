@@ -43,22 +43,21 @@ class role_drupal::repo (
       content   =>  template('role_drupal/sshconfig.erb'),
       mode      => 600,
     }->
-    file{ '/root/.ssh/known_hosts' :
-      ensure    => file,
-      mode      => 0600,
-    }->
-    file{ '/tmp/known_hosts.sh' :
+    file{ '/usr/local/sbin/known_hosts.sh' :
       ensure    => present,
       mode      => 0700,
       source    => 'puppet:///modules/role_drupal/known_hosts.sh',
     }->
     exec{ 'add_known_hosts' :
-      command   => "/tmp/known_hosts.sh",
+      command   => "/usr/local/sbin/known_hosts.sh",
       path      => "/sbin:/usr/bin:/usr/local/bin/:/bin/",
       provider  => shell,
       user      => 'root',
-      unless    => 'test -f /tmp/known_hosts.sh'
-    }->  
+      unless    => 'test -f /root/.ssh/known_hosts'
+    }->
+    file{ '/root/.ssh/known_hosts':
+      mode      => 600,
+    }->
     vcsrepo { "/tmp/naturalisprofile":
       ensure    => $install_profile_repoversion,
       provider  => $install_profile_repotype,

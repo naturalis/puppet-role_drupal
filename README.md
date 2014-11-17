@@ -20,6 +20,7 @@ admin password will be reported during installation, when installation is done u
 - updateall                   Keep system up to date using drush up, all updates, requires updatesecurity = true
 - updatesecurity              only update security 
 - php_memory_limit            Sets PHP memory limit
+- php_ini_files               Array with ini files. Defaults are set for Ubuntu 14.04, use only /etc/php.ini for Ubuntu 12.04
 - install_profile_userepo     Use repository for install profile
 - install_profile             Install profile name
 - install_profile_repo        repo location, use SSH location when using private repo
