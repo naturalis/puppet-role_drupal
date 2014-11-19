@@ -5,7 +5,7 @@ Puppet role definition for deployment of drupal software
 
 Parameters
 -------------
-Sensible defaults for Naturalis in init.pp, extra_users_hash for additional SSH users. 
+Sensible defaults for Naturalis in init.pp.
 admin password will be reported during installation, when installation is done unattended then search in /var/log/syslog for the text:  Installation complete.  User name: admin  User password: <password here>
 
 ```
@@ -15,29 +15,25 @@ admin password will be reported during installation, when installation is done u
 - docroot                     Documentroot, match location with 'docroot' part of the instances parameter
 - drupalversion               Drupal version
 - drushversion                Drush version
-- extra_users_hash            Hash for extra users passed through to base::users from the naturalis\puppet-base manifest, see example below.
 - mysql_root_password         Root password for mysql server
-- modules                     Array with modules to be enabled within the drupal installation
 - cron                        Enable hourly cronjob for drupal installation. 
-- CKEditor                    Enable download of CKEditor, requires module: ckeditor
-- CKEditorURL                 Download URL for CKEditor 
+- updateall                   Keep system up to date using drush up, all updates, requires updatesecurity = true
+- updatesecurity              only update security 
+- php_memory_limit            Sets PHP memory limit
+- php_ini_files               Array with ini files. Defaults are set for Ubuntu 14.04, use only /etc/php.ini for Ubuntu 12.04
+- install_profile_userepo     Use repository for install profile
+- install_profile             Install profile name
+- install_profile_repo        repo location, use SSH location when using private repo
+- install_profile_repoversion verion of repo
+- install_profile_reposshauth use SSH authentication for github
+- install_profile_repokey     Private key for authentication
+- install_profile_repokeyname name of private key
+- install_profile_repotype    repo type
 - instances                   Apache vhost configuration array
 ```
 
-example extra_users_hash
-```
-role_drupal::extra_users_hash:
-  user1:
-    comment: "Example user 1"
-    shell: "/bin/zsh"
-    ssh_key:
-      type: "ssh-rsa"
-      comment: "user1.soortenregister.nl"
-      key: "AAAAB3sdfgsdfgzyc2EAAAABJQAAAIEArnZ3K6vJ8ZisdqPhsdfgsdf5gdKkpuf5rCqOgGphDrBt3ntT7+rWzjx39Im64CCoL+q6ZKgckEZMjGaOKcV+c77nCmSb8eqAM/4eltwj+OgJ5K5DVi1pUaWxR5IoeiulZK36DetVZJCGCkxxLopjSDFGAS234aPC13cLM0Qqfxk="
-```
 
-
-example ssl enabled virtual hosts with http to https redirect.
+example ssl enabled virtual hosts with http to https redirect, see init.pp for more example values
 
 ```
 role_drupal::enablessl: true
@@ -48,8 +44,8 @@ site-with-ssl.drupalsites.nl:
   port: 443
   priority: 10
   directories: 
-  - options: -Indexes FollowSymLinks MultiViews
-    path: /var/www/sisdrupal
+  - options: -Indexes +FollowSymLinks +MultiViews
+    path: /var/www/drupal
     allow_override: All
   docroot: /var/www/sisdrupal
   ssl: true
@@ -60,7 +56,7 @@ site-without-ssl.drupalsites.nl:
   serveraliases: "*.drupalsites.nl"
   serveradmin: webmaster@drupalsites.nl
   port: 80
-  docroot: /var/www/sisdrupal
+  docroot: /var/www/drupal
   priority: 5
 ```
 
@@ -69,15 +65,17 @@ Classes
 -------------
 - role_drupal
 - role_drupal::instances
-- role_drupal::modules
+- role_drupal::repo
+- role_drupal::update
 
 Dependencies
 -------------
-- naturalis/base
 - puppetlabs/mysql
 - puppetlabs/apache2
+- puppetlabs/vcsrepo
+- puppetlabs/concat
 - binford2k/binford2k-drupal 0.0.4  <- forked@naturalis for mysql-php binding fix
-- thias/php
+- naturalis/puppet-php <- forked from thias/puppet-php modified for Ubuntu 14.04 compatibility
 
 
 Puppet code
@@ -86,8 +84,9 @@ class { role_drupal: }
 ```
 Result
 -------------
-Working webserver with mysql and drupal installation. Additional module installation and hourly cronjobs are also installed by default.
+Working webserver with mysql and drupal installation with custom installation profile. Additional module installation and hourly cronjobs are also installed by default.
 Additional php modules: gd and apc are installed and pecl-apc is also configured so drupal upload status bars are allowed. 
+automatic updates using drush can be enabled. 
 
 Limitations
 -------------
@@ -96,6 +95,7 @@ This module has been built on and tested against Puppet 3 and higher.
 
 The module has been tested on:
 - Ubuntu 12.04LTS
+- Ubuntu 14.04LTS
 
 
 Authors
