@@ -19,7 +19,7 @@ class role_drupal (
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
   $php_memory_limit             = '128M',
-  $php_ini_files                = ['/etc/php.ini','/etc/php5/apache2/php.ini','/etc/php5/cli/php.ini'],
+  $php_ini_files                = ['/etc/php5/apache2/php.ini','/etc/php5/cli/php.ini'],
   $install_profile_userepo      = true,
   $install_profile              = 'naturalis',
   $install_profile_repo         = 'git@github.com:naturalis/drupal_naturalis_installation_profile.git',
@@ -41,11 +41,17 @@ class role_drupal (
 
 # install php and configure php.ini
   php::module { [ 'gd','apc', 'curl']: }
+
+  php::ini { '/etc/php.ini':
+    memory_limit   => $php_memory_limit,
+  }->  
+  class {'php::cli':
+  }
+
   php::ini { $php_ini_files:
     memory_limit   => $php_memory_limit,
-  }->
-  class { 'php::cli':
-  }
+    require        => [Class['apache::mod::php'],Class['php::cli']]
+  }->  
   php::module::ini { 'pecl-apcu':
     prefix   => '20',
     settings => {
@@ -53,7 +59,8 @@ class role_drupal (
       'apc.enabled'      => '1',
       'apc.shm_segments' => '1',
       'apc.shm_size'     => '64M',
-    }
+    },
+    require  => [Class['apache::mod::php'],Class['php::cli']]
   }
 
   class { 'apache':
