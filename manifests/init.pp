@@ -142,7 +142,7 @@ class role_drupal (
 # run cron job every hour
     if ($cron == true) {
       cron { 'drupal hourly cronjob':
-        command => "/usr/local/bin/drush @sites core-cron --yes",
+        command => "/usr/bin/env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin COLUMNS=72 /usr/local/bin/drush --root=${docroot} --quiet cron",
         user    => root,
         minute  => 0
       }
