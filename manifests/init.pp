@@ -19,6 +19,8 @@ class role_drupal (
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
   $php_memory_limit             = '128M',
+  $upload_max_filesize          = '2M',
+  $post_max_size                = '8M',
   $php_ini_files                = ['/etc/php5/apache2/php.ini','/etc/php5/cli/php.ini'],
   $install_profile_userepo      = true,
   $install_profile              = 'naturalis',
@@ -44,12 +46,16 @@ class role_drupal (
 
   php::ini { '/etc/php.ini':
     memory_limit   => $php_memory_limit,
+    upload_max_filesize => $upload_max_filesize,
+    post_max_size  => $post_max_size,
   }->  
   class {'php::cli':
   }
 
   php::ini { $php_ini_files:
     memory_limit   => $php_memory_limit,
+    upload_max_filesize => $upload_max_filesize,
+    post_max_size  => $post_max_size,
     require        => [Class['apache::mod::php'],Class['php::cli']]
   }->  
   php::module::ini { 'pecl-apcu':
