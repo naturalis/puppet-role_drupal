@@ -12,8 +12,8 @@ class role_drupal (
   $configuredrupal              = true,
   $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.34',
-  $updateall                    = false,        # all updates, requires updatesecurity = true
+  $drupalversion                = '7.35',
+  $updateall                    = false,        # all updates
   $updatesecurity               = true,         # only security updates
   $drushversion                 = '7.x-5.9',
   $mysql_root_password          = 'rootpassword',

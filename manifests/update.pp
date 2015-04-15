@@ -17,6 +17,13 @@ class role_drupal::update (
       user      => 'root',
       onlyif    => "drush upc -u 1 --pipe | grep -c 'Update-available'"
     }
+    exec { 'update_security':
+      command   => 'drush upc -u 1 --pipe | grep "SECURITY-UPDATE" | cut -d" " -f1 | xargs drush up -u 1 -y',
+      path      => "/sbin:/usr/bin:/usr/local/bin/:/bin/",
+      provider  => shell,
+      user      => 'root',
+      onlyif    => "drush upc -u 1 --pipe | grep -c 'SECURITY-UPDATE'"
+    }
   } else {
     exec { 'update_security':
       command   => 'drush upc -u 1 --pipe | grep "SECURITY-UPDATE" | cut -d" " -f1 | xargs drush up -u 1 -y',
