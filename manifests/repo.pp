@@ -22,7 +22,7 @@ class role_drupal::repo (
   }
 
   if ( $install_profile_reposshauth == false ) {
-    vcsrepo { "/tmp/naturalisprofile":
+    vcsrepo { '/opt/naturalisprofile':
       ensure    => $install_profile_repoversion,
       provider  => $install_profile_repotype,
       source    => $install_profile_repo,
@@ -34,31 +34,31 @@ class role_drupal::repo (
       ensure    => directory,
     }->
     file { "/root/.ssh/${install_profile_repokeyname}":
-      ensure    => "present",
+      ensure    => 'present',
       content   => $install_profile_repokey,
-      mode      => 600,
+      mode      => '0600',
     }->
     file { '/root/.ssh/config':
-      ensure    => "present",
+      ensure    => 'present',
       content   =>  template('role_drupal/sshconfig.erb'),
-      mode      => 600,
+      mode      => '0600',
     }->
     file{ '/usr/local/sbin/known_hosts.sh' :
-      ensure    => present,
-      mode      => 0700,
+      ensure    => 'present',
+      mode      => '0700',
       source    => 'puppet:///modules/role_drupal/known_hosts.sh',
     }->
     exec{ 'add_known_hosts' :
-      command   => "/usr/local/sbin/known_hosts.sh",
-      path      => "/sbin:/usr/bin:/usr/local/bin/:/bin/",
+      command   => '/usr/local/sbin/known_hosts.sh',
+      path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
       provider  => shell,
       user      => 'root',
       unless    => 'test -f /root/.ssh/known_hosts'
     }->
     file{ '/root/.ssh/known_hosts':
-      mode      => 600,
+      mode      => '0600',
     }->
-    vcsrepo { "/tmp/naturalisprofile":
+    vcsrepo { '/opt/naturalisprofile':
       ensure    => $install_profile_repoversion,
       provider  => $install_profile_repotype,
       source    => $install_profile_repo,
