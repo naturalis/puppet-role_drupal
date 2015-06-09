@@ -17,7 +17,7 @@ admin password will be reported during installation, when installation is done u
 - drushversion                Drush version
 - mysql_root_password         Root password for mysql server
 - cron                        Enable hourly cronjob for drupal installation. 
-- updateall                   Keep system up to date using drush up, all updates, requires updatesecurity = true
+- updateall                   Keep system up to date using drush up, all updates
 - updatesecurity              only update security 
 - php_memory_limit            Sets PHP memory limit
 - php_ini_files               Array with ini files. Defaults are set for Ubuntu 14.04, do not set /etc/php.ini as this ini file will be created by default.
