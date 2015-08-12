@@ -17,10 +17,12 @@ admin password will be reported during installation, when installation is done u
 - drushversion                Drush version
 - mysql_root_password         Root password for mysql server
 - cron                        Enable hourly cronjob for drupal installation. 
-- updateall                   Keep system up to date using drush up, all updates, requires updatesecurity = true
+- updateall                   Keep system up to date using drush up, all updates
 - updatesecurity              only update security 
 - php_memory_limit            Sets PHP memory limit
 - php_ini_files               Array with ini files. Defaults are set for Ubuntu 14.04, do not set /etc/php.ini as this ini file will be created by default.
+- ses_gc_maxlife              session.gc_maxlifetime variable in settings.php, in seconds. default 200000
+- ses_cookie_life             session.cookie_lifetime variable in settings.php, in seconds. default 2000000. Set to 0 to delete cookie after closing browser.
 - install_profile_userepo     Use repository for install profile
 - install_profile             Install profile name
 - install_profile_repo        repo location, use SSH location when using private repo
