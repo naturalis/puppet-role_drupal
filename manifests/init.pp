@@ -12,7 +12,7 @@ class role_drupal (
   $configuredrupal              = true,
   $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.37',
+  $drupalversion                = '7.38',
   $updateall                    = false,        # all updates using drush up
   $updatesecurity               = true,         # only security updates
   $drushversion                 = '7.x-5.9',
@@ -22,6 +22,8 @@ class role_drupal (
   $upload_max_filesize          = '2M',
   $post_max_size                = '8M',
   $php_ini_files                = ['/etc/php5/apache2/php.ini','/etc/php5/cli/php.ini'],
+  $ses_gc_maxlife               = 200000,
+  $ses_cookie_life              = 2000000,
   $install_profile_userepo      = true,
   $install_profile              = 'naturalis',
   $install_profile_repo         = 'git@github.com:naturalis/drupal_naturalis_installation_profile.git',
@@ -118,18 +120,20 @@ class role_drupal (
       require        => File[$docroot],
     }->
     class { 'drupal':
-      installtype      => 'remote',
-      database         => 'drupaldb',
-      dbuser           => 'drupaluser',
-      dbdriver         => 'mysql',
-      dbpassword       => $dbpassword,
-      docroot          => $docroot,
-      managedatabase   => true,
-      managevhost      => false,
-      drupalversion    => $drupalversion,
-      drushversion     => $drushversion,
-      install_profile  => $install_profile,
-      require          => Exec['install drupal manual'],
+      installtype       => 'remote',
+      database          => 'drupaldb',
+      dbuser            => 'drupaluser',
+      dbdriver          => 'mysql',
+      dbpassword        => $dbpassword,
+      docroot           => $docroot,
+      managedatabase    => true,
+      managevhost       => false,
+      drupalversion     => $drupalversion,
+      drushversion      => $drushversion,
+      install_profile   => $install_profile,
+      ses_gc_maxlife    => $ses_gc_maxlife,
+      ses_cookie_life   => $ses_cookie_life,
+      require           => Exec['install drupal manual'],
     }
     class { 'mysql::server::account_security':}
     class { 'mysql::server':
