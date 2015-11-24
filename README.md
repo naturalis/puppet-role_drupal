@@ -71,12 +71,12 @@ Classes
 
 Dependencies
 -------------
-- puppetlabs/mysql
-- puppetlabs/apache2
-- puppetlabs/vcsrepo
-- puppetlabs/concat
-- binford2k/binford2k-drupal 0.0.4  <- forked@naturalis for mysql-php binding fix
-- naturalis/puppet-php <- forked from thias/puppet-php modified for Ubuntu 14.04 compatibility
+- puppetlabs/mysql 3.6.1
+- puppetlabs/apache2 1.6.0
+- puppetlabs/vcsrepo 1.3.1
+- puppetlabs/concat 1.2.4
+- naturalis/binford2k-drupal 1.0.0  <- forked@naturalis for mysql-php binding fix
+- naturalis/puppet-php 1.0.0 <- forked from thias/puppet-php modified for Ubuntu 14.04 compatibility
 
 
 Puppet code
@@ -95,7 +95,6 @@ This module has been built on and tested against Puppet 3 and higher.
 
 
 The module has been tested on:
-- Ubuntu 12.04LTS
 - Ubuntu 14.04LTS
 
 
