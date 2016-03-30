@@ -12,7 +12,7 @@ class role_drupal (
   $configuredrupal              = true,
   $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.41',
+  $drupalversion                = '7.43',
   $updateall                    = false,        # all updates using drush up
   $updatesecurity               = true,         # only security updates
   $drushversion                 = '7.x-5.9',
@@ -106,7 +106,7 @@ class role_drupal (
 # main drupal download and installation
   if ($configuredrupal == true) {
     exec { 'download drupal and untar drupal':
-      command        => "/usr/bin/curl http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -o /opt/drupal-${drupalversion}.tar.gz && /bin/tar -xf /opt/drupal-${drupalversion}.tar.gz -C /opt",
+      command        => "/usr/bin/wget http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -O /opt/drupal-${drupalversion}.tar.gz && /bin/tar -xf /opt/drupal-${drupalversion}.tar.gz -C /opt",
       unless         => "/usr/bin/test -d ${docroot}/sites",
     }->
     exec { 'install drupal manual':
