@@ -9,10 +9,13 @@
 #
 class role_drupal (
   $enablessl                    = false,
+  $enableletsencrypt            = false,
+  $letsencryptemail             = 'letsencypt@mydomain.me',
+  $ssldomains                   = ['test-letsencrypt.naturalis.nl'],
   $configuredrupal              = true,
   $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.41',
+  $drupalversion                = '7.43',
   $updateall                    = false,        # all updates using drush up
   $updatesecurity               = true,         # only security updates
   $drushversion                 = '7.x-5.9',
@@ -82,6 +85,16 @@ class role_drupal (
     class { 'apache::mod::ssl':
       ssl_compression => false,
       ssl_options     => [ 'StdEnvVars' ],
+    }
+  }
+
+  if ($enableletsencrypt == true) {
+    class { 'letsencrypt': 
+      email => $letsencryptemail,
+    }
+    letsencrypt::certonly { 'install cert': 
+      domains => $ssldomains,
+      plugin  => 'apache',
     }
   }
 
