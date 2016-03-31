@@ -16,11 +16,12 @@ class role_drupal::repo (
 ){
 
 
-# ensure git package for repo checkouts
-  package { 'git':
-    ensure => installed,
+# ensure git package for repo checkouts, conflicts with letsencrypt so only when letsencrypt is disabled.
+  if ( $role_drupal::enableletsencrypt == false ) {
+    package { 'git':
+      ensure => installed,
+    }
   }
-
   if ( $install_profile_reposshauth == false ) {
     vcsrepo { '/opt/naturalisprofile':
       ensure    => $install_profile_repoversion,
