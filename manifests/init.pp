@@ -15,10 +15,11 @@ class role_drupal (
   $configuredrupal              = true,
   $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.43',
+  $drupalversion                = '7.50',
   $updateall                    = false,        # all updates using drush up
   $updatesecurity               = true,         # only security updates
-  $drushversion                 = '7.x-5.9',
+  $updatedrush                  = true,         # update drush and composer to latest version
+  $drushversion                 = '8.x',
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
   $php_memory_limit             = '128M',
