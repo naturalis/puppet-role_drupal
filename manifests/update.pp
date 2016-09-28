@@ -6,10 +6,9 @@
 #
 #
 class role_drupal::update (
-  $updateall    = undef,
 ){
 
-  if ( $updateall == true ) {
+  if ( $role_drupal::updateall == true ) {
     exec { 'update_all':
       command   => 'drush pm-updatestatus --full | grep "Update available" | cut -d" " -f2 | xargs drush up -u 1 -y',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
@@ -35,7 +34,7 @@ class role_drupal::update (
   }
 
 # update composer and drush when new drush version is available
-  if ( $updatedrush == true ) {
+  if ( $role_drupal::updatedrush == true ) {
     exec { 'update drush':
       command     => 'composer global self-update & composer global update',
       path        => '/sbin:/usr/bin:/usr/local/bin/:/bin/',

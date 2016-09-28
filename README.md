@@ -67,7 +67,9 @@ Classes
 - role_drupal
 - role_drupal::instances
 - role_drupal::repo
-- role_drupal::update
+- role_drupal::update    ( drush 8.x )
+- role_drupal::updateold ( drush 5.x )
+
 
 Dependencies
 -------------

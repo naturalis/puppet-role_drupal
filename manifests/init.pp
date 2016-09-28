@@ -104,8 +104,8 @@ class role_drupal (
       instances => $instances,
     }
 
-# clone repository when userepo == true
-  if ( $install_profile_userepo == true ) {
+# main drupal download and installation with custom profile
+  if ($configuredrupal == true ) and ($install_profile_userepo == true ){
     class { 'role_drupal::repo':
       install_profile               => $install_profile,
       install_profile_repo          => $install_profile_repo,
@@ -115,10 +115,6 @@ class role_drupal (
       install_profile_repokeyname   => $install_profile_repokeyname,
       install_profile_repotype      => $install_profile_repotype,
     }
-  }
-
-# main drupal download and installation
-  if ($configuredrupal == true) {
     exec { 'download drupal and untar drupal':
       command        => "/usr/bin/wget http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -O /opt/drupal-${drupalversion}.tar.gz && /bin/tar -xf /opt/drupal-${drupalversion}.tar.gz -C /opt",
       unless         => "/usr/bin/test -d ${docroot}/sites",
@@ -126,12 +122,12 @@ class role_drupal (
     exec { 'install drupal manual':
       command        => "/bin/mv /opt/drupal-${drupalversion}/* ${docroot}",
       unless         => "/usr/bin/test -d ${docroot}/sites",
-      require        => [File[$docroot],Vcsrepo['/opt/naturalisprofile']]
+      require        => File[$docroot],
     }->
     exec { 'install drupal manual profile':
       command        => "/bin/mv /opt/naturalisprofile/* ${docroot}/profiles",
       unless         => "/usr/bin/test -d ${docroot}/profiles/naturalis",
-      require        => File[$docroot],
+      require        => [File[$docroot],Vcsrepo['/opt/naturalisprofile']]
     }->
     class { 'drupal':
       installtype       => 'remote',
@@ -149,33 +145,65 @@ class role_drupal (
       ses_cookie_life   => $ses_cookie_life,
       require           => Exec['install drupal manual'],
     }
-    class { 'mysql::server::account_security':}
-    class { 'mysql::server':
-      root_password  => $mysql_root_password,
-    }
+  }
 
-# custom folder settings, needed for boost module
-    file { ["${docroot}/cache","${docroot}/cache/normal"]:
-      ensure      => 'directory',
-      mode        => '0755',
-      owner       => 'www-data',
-      require     => File[$docroot],
-    }
-
-# run cron job every hour
-    if ($cron == true) {
-      cron { 'drupal hourly cronjob':
-        command => "/usr/bin/env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin COLUMNS=72 /usr/local/bin/drush --root=${docroot} --quiet cron",
-        user    => root,
-        minute  => 0
-      }
+# main drupal download and installation with default profile
+  if ($configuredrupal == true ) and ($install_profile_userepo == false ){
+    exec { 'download drupal and untar drupal no profile':
+      command        => "/usr/bin/wget http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -O /opt/drupal-${drupalversion}.tar.gz && /bin/tar -xf /opt/drupal-${drupalversion}.tar.gz -C /opt",
+      unless         => "/usr/bin/test -d ${docroot}/sites",
+    }->
+    exec { 'install drupal manual no profile':
+      command        => "/bin/mv /opt/drupal-${drupalversion}/* ${docroot}",
+      unless         => "/usr/bin/test -d ${docroot}/sites",
+      require        => File[$docroot],
+    }->
+    class { 'drupal':
+      installtype       => 'remote',
+      database          => 'drupaldb',
+      dbuser            => 'drupaluser',
+      dbdriver          => 'mysql',
+      dbpassword        => $dbpassword,
+      docroot           => $docroot,
+      managedatabase    => true,
+      managevhost       => false,
+      drupalversion     => $drupalversion,
+      drushversion      => $drushversion,
+      ses_gc_maxlife    => $ses_gc_maxlife,
+      ses_cookie_life   => $ses_cookie_life,
+      require           => Exec['install drupal manual no profile'],
     }
   }
 
-# clone repository when userepo == true
+
+# mysql server security
+  class { 'mysql::server::account_security':}
+  class { 'mysql::server':
+    root_password  => $mysql_root_password,
+  }
+
+
+# custom folder settings, needed for boost module
+  file { ["${docroot}/cache","${docroot}/cache/normal"]:
+    ensure      => 'directory',
+    mode        => '0755',
+    owner       => 'www-data',
+    require     => File[$docroot],
+  }
+
+
+# run cron job every hour
+  if ($cron == true) {
+    cron { 'drupal hourly cronjob':
+      command => "/usr/bin/env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin COLUMNS=72 /usr/local/bin/drush --root=${docroot} --quiet cron",
+      user    => root,
+      minute  => 0
+    }
+  }
+
+# update when configured
   if ( $updatesecurity == true ) or ( $updateall == true ) {
     class { 'role_drupal::update':
-      updateall     => $updateall,
     }
   }
 }
