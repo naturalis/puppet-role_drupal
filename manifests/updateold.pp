@@ -17,7 +17,7 @@ class role_drupal::updateold (
       onlyif    => 'drush upc -u 1 --pipe | grep -c "Update-available"'
     }
     exec { 'update_security_old_drush':
-      command   => 'drush upc -u 1 --pipe | grep "Update-available" | cut -d" " -f1 | xargs drush up -u 1 -y',
+      command   => 'drush upc -u 1 --pipe | grep "SECURITY-UPDATE" | cut -d" " -f1 | xargs drush up -u 1 -y',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
       provider  => shell,
       user      => 'root',
@@ -25,7 +25,7 @@ class role_drupal::updateold (
     }
   } else {
     exec { 'update_security_old_drush':
-      command   => 'drush upc -u 1 --pipe | grep "Update-available" | cut -d" " -f1 | xargs drush up -u 1 -y',
+      command   => 'drush upc -u 1 --pipe | grep "SECURITY-UPDATE" | cut -d" " -f1 | xargs drush up -u 1 -y',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
       provider  => shell,
       user      => 'root',

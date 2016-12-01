@@ -15,11 +15,11 @@ class role_drupal (
   $configuredrupal              = true,
   $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.50',
-  $updateall                    = false,        # all updates using drush up
-  $updatesecurity               = true,         # only security updates
-  $updatedrush                  = true,         # update drush and composer to latest version
-  $drushversion                 = '8.x',
+  $drupalversion                = '7.52',
+  $updateall                    = false,                                   # all updates using drush up
+  $updatesecurity               = true,                                    # only security updates
+  $updatedrush                  = true,                                    # update drush and composer to latest version
+  $drushversion                 = '8.x',                                   # 5.9 enables old update scripts
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
   $php_memory_limit             = '128M',
@@ -203,7 +203,10 @@ class role_drupal (
 
 # update when configured
   if ( $updatesecurity == true ) or ( $updateall == true ) {
-    class { 'role_drupal::update':
+    if ( $drushversion == '5.9' ) {
+      class { 'role_drupal::updateold':}
+    } else {
+      class { 'role_drupal::update':}
     }
   }
 }
