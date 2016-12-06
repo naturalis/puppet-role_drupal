@@ -1,3 +1,4 @@
+#!/bin/bash
 # Renew Let's Encrypt SSL cert
 
 # stop puppet from messing up script during runtime
@@ -9,7 +10,7 @@ sleep 5
 
 # run letsencrypt-auto
 cd <%= @letsencrypt_path %>
-./letsencrypt-auto certonly  --config <%= @letsencrypt_path %>/cli.ini
+./certbot-auto renew --quiet
 if [ $? -ne 0 ]
  then
         ERRORLOG=`tail /var/log/letsencrypt/letsencrypt.log`
