@@ -27,12 +27,19 @@ class role_drupal (
   $drushversion                 = '8.x',                                   # 5.9 enables old update scripts
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
+# PHP Settings
   $php_memory_limit             = '128M',
   $upload_max_filesize          = '2M',
   $post_max_size                = '8M',
   $php_ini_files                = ['/etc/php5/apache2/php.ini','/etc/php5/cli/php.ini'],
   $ses_gc_maxlife               = 200000,
   $ses_cookie_life              = 2000000,
+# Mysql Settings
+  $mysql_large_indexes          = false,
+  $mysql_innodb_large_prefix    = 'true',
+  $mysql_innodb_file_format     = 'barracuda',
+  $mysql_innodb_file_per_table  = 'true',
+# Install profile settings
   $install_profile_userepo      = true,
   $install_profile              = 'naturalis',
   $install_profile_repo         = 'git@github.com:naturalis/drupal_naturalis_installation_profile.git',
@@ -182,11 +189,23 @@ class role_drupal (
 
 # mysql server security
   class { 'mysql::server::account_security':}
-  class { 'mysql::server':
-    root_password  => $mysql_root_password,
+
+  if ($mysql_large_indexes == true ){
+    class { 'mysql::server':
+      root_password           => $mysql_root_password,
+      override_options        => {
+                'mysqld'            => {
+                      'innodb_large_prefix'     => $mysql_innodb_large_prefix,
+                      'innodb_file_format'      => $mysql_innodb_file_format,
+                      'innodb_file_per_table'   => $mysql_innodb_file_per_table,
+                                       }
+                }
+    }
+  } else {
+    class { 'mysql::server':
+      root_password           => $mysql_root_password,
+    }
   }
-
-
 # custom folder settings, needed for boost module
   file { ["${docroot}/cache","${docroot}/cache/normal"]:
     ensure      => 'directory',
