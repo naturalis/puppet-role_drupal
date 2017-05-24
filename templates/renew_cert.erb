@@ -9,7 +9,7 @@
 sleep 5
 
 # run letsencrypt-auto
-cd <%= @letsencrypt_path %>
+cd <%= scope.lookupvar('role_backup::letsencrypt_path') %>
 ./certbot-auto renew --quiet
 if [ $? -ne 0 ]
  then

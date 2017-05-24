@@ -6,27 +6,22 @@
 #
 #
 class role_drupal::repo (
-  $install_profile              = 'naturalis',
-  $install_profile_repo         = 'git@github.com:naturalis/drupal_naturalis_installation_profile.git',
-  $install_profile_repoversion  = 'present',
-  $install_profile_reposshauth  = true,
-  $install_profile_repokey      = undef,
-  $install_profile_repokeyname  = 'githubkey',
-  $install_profile_repotype     = 'git',
 ){
 
 
 # ensure git package for repo checkouts, conflicts with letsencrypt so only when letsencrypt is disabled.
-  if ( $role_drupal::enableletsencrypt == false ) {
+
+
+#  if ( $role_drupal::enableletsencrypt == false ) {
     package { 'git':
       ensure => installed,
     }
-  }
-  if ( $install_profile_reposshauth == false ) {
+#  }
+  if ( $role_drupal::install_profile_reposshauth == false ) {
     vcsrepo { '/opt/naturalisprofile':
-      ensure    => $install_profile_repoversion,
-      provider  => $install_profile_repotype,
-      source    => $install_profile_repo,
+      ensure    => $role_drupal::install_profile_repoversion,
+      provider  => $role_drupal::install_profile_repotype,
+      source    => $role_drupal::install_profile_repo,
       require   => Package['git'],
       revision  => 'master',
     }
@@ -34,9 +29,9 @@ class role_drupal::repo (
     file { '/root/.ssh':
       ensure    => directory,
     }->
-    file { "/root/.ssh/${install_profile_repokeyname}":
+    file { "/root/.ssh/${role_drupal::install_profile_repokeyname}":
       ensure    => 'present',
-      content   => $install_profile_repokey,
+      content   => $role_drupal::install_profile_repokey,
       mode      => '0600',
     }->
     file { '/root/.ssh/config':
@@ -60,9 +55,9 @@ class role_drupal::repo (
       mode      => '0600',
     }->
     vcsrepo { '/opt/naturalisprofile':
-      ensure    => $install_profile_repoversion,
-      provider  => $install_profile_repotype,
-      source    => $install_profile_repo,
+      ensure    => $role_drupal::install_profile_repoversion,
+      provider  => $role_drupal::install_profile_repotype,
+      source    => $role_drupal::install_profile_repo,
       user      => 'root',
       revision  => 'master',
       require   => Package['git'],

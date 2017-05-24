@@ -67,18 +67,23 @@ Classes
 - role_drupal
 - role_drupal::instances
 - role_drupal::repo
-- role_drupal::update    ( drush 8.x )
-- role_drupal::updateold ( drush 5.x )
+- role_drupal::update 
+- role_drupal::configure
+- role_drupal::drush
+- role_drupal::install 
+- role_drupal::site
+- role_drupal::letsencrypt
+
 
 
 Dependencies
 -------------
-- puppetlabs/mysql 3.6.1
-- puppetlabs/apache2 1.6.0
-- puppetlabs/vcsrepo 1.3.1
-- puppetlabs/concat 1.2.4
-- naturalis/binford2k-drupal 1.0.0  <- forked@naturalis for mysql-php binding fix
-- naturalis/puppet-php 1.0.0 <- forked from thias/puppet-php modified for Ubuntu 14.04 compatibility
+- puppetlabs/mysql >= 3.11.0
+- puppetlabs/apache2 >= 1.11.0
+- puppetlabs/vcsrepo >= 1.5.0
+- puppetlabs/concat >= 2.2.0
+- puppetlabs/inifile >= 1.6.0
+- voxpupuli/puppet-php >= 4.0.0
 
 
 Puppet code
@@ -88,19 +93,14 @@ class { role_drupal: }
 Result
 -------------
 Working webserver with mysql and drupal installation with custom installation profile. Additional module installation and hourly cronjobs are also installed by default.
-Additional php modules: gd and apc are installed and pecl-apc is also configured so drupal upload status bars are allowed. 
+Additional php modules: gd and pecl uploadprogress is also configured so drupal upload status bars can be enabled.
 automatic updates using drush can be enabled. 
 
 Limitations
 -------------
-This module has been built on and tested against Puppet 3 and higher.
+This module has been built on and tested against Puppet 4 and higher.
 
 
 The module has been tested on:
-- Ubuntu 14.04LTS
-
-
-Authors
--------------
-Author Name <hugo.vanduijn@naturalis.nl>
+- Ubuntu 16.04LTS
 

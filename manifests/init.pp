@@ -8,9 +8,12 @@
 #
 #
 class role_drupal (
+# General settings
+  $admin_password               = randstr(),
+  $packagename                  = 'drupal7',
   $enablessl                    = false,
   $enableletsencrypt            = false,
-  $letsencrypt_email             = 'letsencypt@mydomain.me',
+  $letsencrypt_email            = 'letsencypt@mydomain.me',
   $letsencrypt_path             = '/opt/letsencrypt',
   $letsencrypt_repo             = 'git://github.com/letsencrypt/letsencrypt.git',
   $letsencrypt_version          = 'master',
@@ -18,30 +21,36 @@ class role_drupal (
   $letsencrypt_domain           = 'www.drupalsites.nl',
   $letsencrypt_server           = 'https://acme-v01.api.letsencrypt.org/directory',
   $configuredrupal              = true,
-  $dbpassword                   = 'password',
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.52',
+  $drupalversion                = '7.54',
   $updateall                    = false,                                   # all updates using drush up
   $updatesecurity               = true,                                    # only security updates
   $updatedrush                  = true,                                    # update drush and composer to latest version
-  $drushversion                 = '8.x',                                   # 5.9 enables old update scripts
+  $drushversion                 = '8.x',
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
 # PHP Settings
   $php_memory_limit             = '128M',
   $upload_max_filesize          = '2M',
   $post_max_size                = '8M',
-  $php_ini_files                = ['/etc/php5/apache2/php.ini','/etc/php5/cli/php.ini'],
   $ses_gc_maxlife               = 200000,
   $ses_cookie_life              = 2000000,
 # Mysql Settings
-  $mysql_large_indexes          = false,
+  $mysql_large_indexes          = 'true',
   $mysql_innodb_large_prefix    = 'true',
   $mysql_innodb_file_format     = 'barracuda',
   $mysql_innodb_file_per_table  = 'true',
+  $managedatabase               = true,
+  $dbname                       = 'drupal',
+  $dbuser                       = 'drupal',
+  $dbpassword                   = 'drupal',
+  $dbhost                       = 'localhost',
+  $dbport                       = '',
+  $dbdriver                     = 'mysql',
+  $dbprefix                     = '',
 # Install profile settings
   $install_profile_userepo      = true,
-  $install_profile              = 'naturalis',
+  $install_profile              = 'naturalis',  # use standard for standard profile
   $install_profile_repo         = 'git@github.com:naturalis/drupal_naturalis_installation_profile.git',
   $install_profile_repoversion  = 'present',
   $install_profile_reposshauth  = true,
@@ -60,31 +69,42 @@ class role_drupal (
 ){
 
 # install php and configure php.ini
-  php::module { [ 'gd','apc', 'curl']: }
-
-  php::ini { '/etc/php.ini':
-    memory_limit        => $php_memory_limit,
-    upload_max_filesize => $upload_max_filesize,
-    post_max_size       => $post_max_size,
-  }->
-  class {'php::cli':
+  class { '::php':
+    ensure              => latest,
+    manage_repos        => true,
+    extensions => {
+      gd         => { 
+        provider => 'apt',
+        source   => 'php7-gd',
+      },
+      curl       => { 
+        provider => 'apt',
+        source   => 'php-curl',
+      },
+      mcrypt     => {
+        provider => 'apt',
+        source   => 'php-mcrypt',
+      },
+      mbstring   => {
+        provider => 'apt',
+        source   => 'php-mbstring',
+      },
+    },
+    settings   => {
+        'PHP/apc.rfc1867'         => '1',
+        'PHP/max_execution_time'  => '90',
+        'PHP/max_input_time'      => '300',
+        'PHP/memory_limit'        => $role_drupal::php_memory_limit,
+        'PHP/post_max_size'       => $role_drupal::post_max_size,
+        'PHP/upload_max_filesize' => $role_drupal::upload_max_filesize,
+        'Date/date.timezone'      => 'Europe/Amsterdam',
+    },
   }
 
-  php::ini { $php_ini_files:
-    memory_limit        => $php_memory_limit,
-    upload_max_filesize => $upload_max_filesize,
-    post_max_size       => $post_max_size,
-    require             => [Class['apache::mod::php'],Class['php::cli']]
-  }->
-  php::module::ini { 'pecl-apcu':
-    prefix   => '20',
-    settings => {
-      'apc.rfc1867'      => '1',
-      'apc.enabled'      => '1',
-      'apc.shm_segments' => '1',
-      'apc.shm_size'     => '64M',
-    },
-    require  => [Class['apache::mod::php'],Class['php::cli']]
+# custom pecl uploadprogress package, requires manage_repos => true in class php
+  package {'php-uploadprogress':
+    ensure          => latest,
+    require         => Class['::php'],
   }
 
   class { 'apache':
@@ -94,14 +114,14 @@ class role_drupal (
   include apache::mod::php
   include apache::mod::rewrite
 
-  if ($enablessl == true) {
+  if ($role_drupal::enablessl == true) {
     class { 'apache::mod::ssl':
       ssl_compression => false,
       ssl_options     => [ 'StdEnvVars' ],
     }
   }
 
-  if ($enableletsencrypt == true) {
+  if ($role_drupal::enableletsencrypt == true) {
     package { 'git':
       ensure          => installed
     }
@@ -112,124 +132,103 @@ class role_drupal (
 
 # Create instance, install php modules and download+untar drupal in specific order.
     class { 'role_drupal::instances':
-      instances => $instances,
+      instances => $role_drupal::instances,
     }
 
 # main drupal download and installation with custom profile
-  if ($configuredrupal == true ) and ($install_profile_userepo == true ){
+  if ($role_drupal::configuredrupal == true ) and ($role_drupal::install_profile_userepo == true ){
     class { 'role_drupal::repo':
-      install_profile               => $install_profile,
-      install_profile_repo          => $install_profile_repo,
-      install_profile_repoversion   => $install_profile_repoversion,
-      install_profile_reposshauth   => $install_profile_reposshauth,
-      install_profile_repokey       => $install_profile_repokey,
-      install_profile_repokeyname   => $install_profile_repokeyname,
-      install_profile_repotype      => $install_profile_repotype,
     }
     exec { 'download drupal and untar drupal':
-      command        => "/usr/bin/wget http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -O /opt/drupal-${drupalversion}.tar.gz && /bin/tar -xf /opt/drupal-${drupalversion}.tar.gz -C /opt",
-      unless         => "/usr/bin/test -d ${docroot}/sites",
+      command        => "/usr/bin/wget http://ftp.drupal.org/files/projects/drupal-${role_drupal::drupalversion}.tar.gz -O /opt/drupal-${role_drupal::drupalversion}.tar.gz && /bin/tar -xf /opt/drupal-${role_drupal::drupalversion}.tar.gz -C /opt",
+      unless         => "/usr/bin/test -d ${role_drupal::docroot}/sites",
     }->
     exec { 'install drupal manual':
-      command        => "/bin/mv /opt/drupal-${drupalversion}/* ${docroot}",
-      unless         => "/usr/bin/test -d ${docroot}/sites",
-      require        => File[$docroot],
+      command        => "/bin/mv /opt/drupal-${role_drupal::drupalversion}/* ${role_drupal::docroot}",
+      unless         => "/usr/bin/test -d ${role_drupal::docroot}/sites",
+      require        => File[$role_drupal::docroot],
     }->
     exec { 'install drupal manual profile':
-      command        => "/bin/mv /opt/naturalisprofile/* ${docroot}/profiles",
-      unless         => "/usr/bin/test -d ${docroot}/profiles/naturalis",
-      require        => [File[$docroot],Vcsrepo['/opt/naturalisprofile']]
+      command        => "/bin/mv /opt/naturalisprofile/* ${role_drupal::docroot}/profiles",
+      unless         => "/usr/bin/test -d ${role_drupal::docroot}/profiles/naturalis",
+      require        => [File[$role_drupal::docroot],Vcsrepo['/opt/naturalisprofile']]
     }->
-    class { 'drupal':
-      installtype       => 'remote',
-      database          => 'drupaldb',
-      dbuser            => 'drupaluser',
-      dbdriver          => 'mysql',
-      dbpassword        => $dbpassword,
-      docroot           => $docroot,
-      managedatabase    => true,
-      managevhost       => false,
-      drupalversion     => $drupalversion,
-      drushversion      => $drushversion,
-      install_profile   => $install_profile,
-      ses_gc_maxlife    => $ses_gc_maxlife,
-      ses_cookie_life   => $ses_cookie_life,
-      require           => Exec['install drupal manual'],
+    class { 'role_drupal::install':
+      require           => [Class['::php'],Exec['install drupal manual']],
     }
   }
 
 # main drupal download and installation with default profile
-  if ($configuredrupal == true ) and ($install_profile_userepo == false ){
+  if ($role_drupal::configuredrupal == true ) and ($role_drupal::install_profile_userepo == false ){
     exec { 'download drupal and untar drupal no profile':
-      command        => "/usr/bin/wget http://ftp.drupal.org/files/projects/drupal-${drupalversion}.tar.gz -O /opt/drupal-${drupalversion}.tar.gz && /bin/tar -xf /opt/drupal-${drupalversion}.tar.gz -C /opt",
-      unless         => "/usr/bin/test -d ${docroot}/sites",
+      command        => "/usr/bin/wget http://ftp.drupal.org/files/projects/drupal-${role_drupal::drupalversion}.tar.gz -O /opt/drupal-${role_drupal::drupalversion}.tar.gz && /bin/tar -xf /opt/drupal-${role_drupal::drupalversion}.tar.gz -C /opt",
+      unless         => "/usr/bin/test -d ${role_drupal::docroot}/sites",
     }->
     exec { 'install drupal manual no profile':
-      command        => "/bin/mv /opt/drupal-${drupalversion}/* ${docroot}",
-      unless         => "/usr/bin/test -d ${docroot}/sites",
-      require        => File[$docroot],
+      command        => "/bin/mv /opt/drupal-${role_drupal::drupalversion}/* ${role_drupal::docroot}",
+      unless         => "/usr/bin/test -d ${role_drupal::docroot}/sites",
+      require        => File[$role_drupal::docroot],
     }->
-    class { 'drupal':
-      installtype       => 'remote',
-      database          => 'drupaldb',
-      dbuser            => 'drupaluser',
-      dbdriver          => 'mysql',
-      dbpassword        => $dbpassword,
-      docroot           => $docroot,
-      managedatabase    => true,
-      managevhost       => false,
-      drupalversion     => $drupalversion,
-      drushversion      => $drushversion,
-      ses_gc_maxlife    => $ses_gc_maxlife,
-      ses_cookie_life   => $ses_cookie_life,
-      require           => Exec['install drupal manual no profile'],
+    class { 'role_drupal::install':
+      require           => [Class['::php'],Exec['install drupal manual no profile']],
     }
   }
 
 
-# mysql server security
-  class { 'mysql::server::account_security':}
+# mysql server 
+  if $role_drupal::managedatabase {
+    class { 'mysql::bindings':
+      php_enable => true,
+    }
+    mysql::db { $role_drupal::dbname:
+      ensure   => present,
+      user     => $role_drupal::dbuser,
+      password => $role_drupal::dbpassword,
+      host     => $role_drupal::dbhost,
+      grant    => ['all'],
+    }
 
-  if ($mysql_large_indexes == true ){
-    class { 'mysql::server':
-      root_password           => $mysql_root_password,
-      override_options        => {
+   class { 'mysql::server::account_security':}
+
+   if ($role_drupal::mysql_large_indexes == true ){
+     class { 'mysql::server':
+       root_password                => $role_drupal::mysql_root_password,
+       override_options             => {
                 'mysqld'            => {
-                      'innodb_large_prefix'     => $mysql_innodb_large_prefix,
-                      'innodb_file_format'      => $mysql_innodb_file_format,
-                      'innodb_file_per_table'   => $mysql_innodb_file_per_table,
+                'innodb_large_prefix'     => $role_drupal::mysql_innodb_large_prefix,
+                'innodb_file_format'      => $role_drupal::mysql_innodb_file_format,
+                'innodb_file_per_table'   => $role_drupal::mysql_innodb_file_per_table,
                                        }
                 }
     }
-  } else {
-    class { 'mysql::server':
-      root_password           => $mysql_root_password,
+    } else {
+      class { 'mysql::server':
+        root_password           => $role_drupal::mysql_root_password,
+      }
     }
   }
+
 # custom folder settings, needed for boost module
-  file { ["${docroot}/cache","${docroot}/cache/normal"]:
+  file { ["${role_drupal::docroot}/cache","${role_drupal::docroot}/cache/normal"]:
     ensure      => 'directory',
     mode        => '0755',
     owner       => 'www-data',
-    require     => File[$docroot],
+    require     => File[$role_drupal::docroot],
   }
 
 
 # run cron job every hour
-  if ($cron == true) {
+  if ($role_drupal::cron == true) {
     cron { 'drupal hourly cronjob':
-      command => "/usr/bin/env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin COLUMNS=72 /usr/local/bin/drush --root=${docroot} --quiet cron",
+      command => "/usr/bin/env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin COLUMNS=72 /usr/local/bin/drush --root=${role_drupal::docroot} --quiet cron",
       user    => root,
       minute  => 0
     }
   }
 
 # update when configured
-  if ( $updatesecurity == true ) or ( $updateall == true ) {
-    if ( $drushversion == '5.9' ) {
-      class { 'role_drupal::updateold':}
-    } else {
+  if ( $role_drupal::updatesecurity == true ) or ( $role_drupal::updateall == true ) {
       class { 'role_drupal::update':}
     }
-  }
 }
+

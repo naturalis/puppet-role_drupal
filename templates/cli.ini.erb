@@ -3,13 +3,13 @@ rsa-key-size = 4096
 
 # the staging/testing server : https://acme-staging.api.letsencrypt.org/directory
 # the main server for production : https://acme-v01.api.letsencrypt.org/directory
-server = <%= @letsencrypt_server %>
+server = <%= scope.lookupvar('role_drupal::letsencrypt_server') %>
 
 # Update to register with the specified e-mail address
-email = <%= @letsencrypt_email %>
+email = <%= scope.lookupvar('role_drupal::letsencrypt_email') %>
 
 # generate certificates for the specified domain(s)
-domains =  <%= @letsencrypt_domain %>
+domains =  <%= scope.lookupvar('role_drupal::letsencrypt_domain') %>
 
 # use the standalone authenticator on port 443
  authenticator = standalone
