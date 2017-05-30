@@ -48,6 +48,9 @@ class role_drupal (
   $dbport                       = '',
   $dbdriver                     = 'mysql',
   $dbprefix                     = '',
+  $dbcharset                    = 'utf8mb4',
+  $dbcollation                  = 'utf8mb4_general_ci',
+
 # Install profile settings
   $install_profile_userepo      = true,
   $install_profile              = 'naturalis',  # use standard for standard profile
@@ -105,6 +108,7 @@ class role_drupal (
   package {'php-uploadprogress':
     ensure          => latest,
     require         => Class['::php'],
+    notify          => Service['apache2'],
   }
 
   class { 'apache':
@@ -181,11 +185,13 @@ class role_drupal (
       php_enable => true,
     }
     mysql::db { $role_drupal::dbname:
-      ensure   => present,
-      user     => $role_drupal::dbuser,
-      password => $role_drupal::dbpassword,
-      host     => $role_drupal::dbhost,
-      grant    => ['all'],
+      ensure    => present,
+      user      => $role_drupal::dbuser,
+      password  => $role_drupal::dbpassword,
+      host      => $role_drupal::dbhost,
+      charset   => $role_drupal::dbcharset,
+      collate   => $role_drupal::dbcollation,
+      grant     => ['all'],
     }
 
    class { 'mysql::server::account_security':}
