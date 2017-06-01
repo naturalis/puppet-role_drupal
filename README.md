@@ -67,12 +67,12 @@ Classes
 - role_drupal
 - role_drupal::instances
 - role_drupal::repo
-- role_drupal::update 
+- role_drupal::update
 - role_drupal::configure
 - role_drupal::drush
-- role_drupal::install 
+- role_drupal::install
 - role_drupal::site
-- role_drupal::letsencrypt
+- role_drupal::ssl
 
 
 
@@ -84,6 +84,7 @@ Dependencies
 - puppetlabs/concat >= 2.2.0
 - puppetlabs/inifile >= 1.6.0
 - voxpupuli/puppet-php >= 4.0.0
+- voxpupuli/puppet-letsencrypt >= 1.1.0
 
 
 Puppet code
