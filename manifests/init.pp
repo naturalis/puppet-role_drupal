@@ -14,10 +14,7 @@ class role_drupal (
   $enablessl                    = false,
   $enableletsencrypt            = false,
   $letsencrypt_email            = 'letsencypt@mydomain.me',
-  $letsencrypt_path             = '/opt/letsencrypt',
-  $letsencrypt_repo             = 'git://github.com/letsencrypt/letsencrypt.git',
   $letsencrypt_version          = 'master',
-  $letsencrypt_live             = '/etc/letsencrypt/live/www.drupalsite.nl/cert.pem',
   $letsencrypt_domains          = ['www.drupalsites.nl'],
   $letsencrypt_server           = 'https://acme-v01.api.letsencrypt.org/directory',
   $configuredrupal              = true,
@@ -69,6 +66,30 @@ class role_drupal (
                                   'priority'        => 10,
                                   },
                                 },
+# add rewrite block to instances to rewrite http to https
+#
+#                                 'rewrites'        => [{ 'rewrite_rule' => '^/?(.*) https://%{SERVER_NAME}/$1 [R,L]' }],
+#
+# Foreman yaml format:
+#
+#  rewrites:
+#  - rewrite_rule:
+#    - "^/?(.*) https://%{SERVER_NAME}/$1 [R,L]"
+#
+  $sslinstances                = {'site.drupalsites.nl-ssl' => {
+                                  'serveraliases'   => '*.drupalsites.nl',
+                                  'docroot'         => '/var/www/drupal',
+                                  'directories'     => [{ 'path' => '/var/www/drupal', 'options' => '-Indexes +FollowSymLinks +MultiViews', 'allow_override' => 'All' }],
+                                  'port'            => 443,
+                                  'serveradmin'     => 'webmaster@naturalis.nl',
+                                  'priority'        => 10,
+                                  'ssl'             => 'true',
+                                  'ssl_cert'        => '/etc/letsencrypt/live/site.drupalsite.nl/cert.pem',
+                                  'ssl_key'         => '/etc/letsencrypt/live/site.drupalsite.nl/privkey.pem',
+                                  'ssl_chain'       => '"/etc/letsencrypt/live/site.drupalsite.nl/chain.pem',
+                                  'additional_includes' =>  '/opt/letsencrypt/certbot-apache/certbot_apache/options-ssl-apache.conf',
+                                  },
+                                },
 ){
 
 # install php and configure php.ini
@@ -118,25 +139,13 @@ class role_drupal (
   include apache::mod::php
   include apache::mod::rewrite
 
-  if ($role_drupal::enablessl == true) {
-    class { 'apache::mod::ssl':
-      ssl_compression => false,
-      ssl_options     => [ 'StdEnvVars' ],
-    }
-  }
+# enable ssl with or without letsencrypt based on config
+  class { 'role_drupal::ssl': }
 
-  if ($role_drupal::enableletsencrypt == true) {
-    'letsencrypt::certonly' { 'letsencrypt_cert':
-      domains       => $role_drupal::letsencrypt_domains,
-      plugin        => 'apache',
-      manage_cron   => true,
-    }
+# Create instance, make sure ssl certs are installed first.
+  class { 'role_drupal::instances':
+    require     => Class['role_drupal::ssl'],
   }
-
-# Create instance, install php modules and download+untar drupal in specific order.
-    class { 'role_drupal::instances':
-      instances => $role_drupal::instances,
-    }
 
 # main drupal download and installation with custom profile
   if ($role_drupal::configuredrupal == true ) and ($role_drupal::install_profile_userepo == true ){
