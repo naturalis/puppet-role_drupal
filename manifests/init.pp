@@ -18,7 +18,7 @@ class role_drupal (
   $letsencrypt_repo             = 'git://github.com/letsencrypt/letsencrypt.git',
   $letsencrypt_version          = 'master',
   $letsencrypt_live             = '/etc/letsencrypt/live/www.drupalsite.nl/cert.pem',
-  $letsencrypt_domain           = 'www.drupalsites.nl',
+  $letsencrypt_domains          = ['www.drupalsites.nl'],
   $letsencrypt_server           = 'https://acme-v01.api.letsencrypt.org/directory',
   $configuredrupal              = true,
   $docroot                      = '/var/www/drupal',
@@ -126,11 +126,10 @@ class role_drupal (
   }
 
   if ($role_drupal::enableletsencrypt == true) {
-    package { 'git':
-      ensure          => installed
-    }
-    class { 'role_drupal::letsencrypt':
-      require         => Package['git']
+    'letsencrypt::certonly' { 'letsencrypt_cert':
+      domains       => $role_drupal::letsencrypt_domains,
+      plugin        => 'apache',
+      manage_cron   => true,
     }
   }
 
