@@ -95,6 +95,7 @@ class role_drupal (
 # install php and configure php.ini
   class { '::php':
     ensure              => latest,
+    composer            => false,
     manage_repos        => true,
     extensions => {
       gd         => { 
