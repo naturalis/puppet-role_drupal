@@ -10,7 +10,7 @@ class role_drupal::update (
 
   if ( $role_drupal::updateall == true ) {
     exec { 'update_all':
-      command   => 'drush "pm-updatestatus --full" | grep "Update available" | cut -d" " -f2 | xargs drush up --no-backup -u 1 -y',
+      command   => '"drush pm-updatestatus --full" | grep "Update available" | cut -d" " -f2 | xargs drush up --no-backup -u 1 -y',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
       cwd       => '/opt',
       provider  => shell,
@@ -18,7 +18,7 @@ class role_drupal::update (
       onlyif    => 'drush pm-updatestatus | grep -c "Update available"'
     }
     exec { 'update_security':
-      command   => 'drush "pm-updatestatus --full" | grep "SECURITY" | cut -d" " -f2 | xargs drush up --no-backup -u 1 -y',
+      command   => '"drush pm-updatestatus --full" | grep "SECURITY" | cut -d" " -f2 | xargs drush up --no-backup -u 1 -y',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
 #      provider  => shell,
       user      => 'root',
@@ -26,11 +26,11 @@ class role_drupal::update (
     }
   } else {
     exec { 'update_security':
-      command   => 'drush "pm-updatestatus --full" | grep "SECURITY" | cut -d" " -f2 | xargs drush up --no-backup -u 1 -y',
+      command   => '"drush pm-updatestatus --full" | grep "SECURITY" | cut -d" " -f2 | xargs drush up --no-backup -u 1 -y',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
       provider  => shell,
       user      => 'root',
-      onlyif    => 'drush pm-updatestatus | grep -c "SECURITY"'
+      onlyif    => 'drush pm-updatestatus --security-only | grep -c SECURITY'
     }
   }
 
