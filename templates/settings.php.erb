@@ -312,7 +312,7 @@ $drupal_hash_salt = '';
  * for you.
  */
 # $base_url = 'http://www.example.com';  // NO trailing slash!
-<% if scope.lookupvar('role_drupal::base_url') %>
+<% if scope.lookupvar('role_drupal::base_url') != "" %>
   $base_url = '<%= scope.lookupvar('role_drupal::base_url') %>';  // NO trailing slash!
 <% end %>
 

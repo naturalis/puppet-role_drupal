@@ -19,14 +19,15 @@ class role_drupal (
   $letsencrypt_server           = 'https://acme-v01.api.letsencrypt.org/directory',
   $configuredrupal              = true,
   $docroot                      = '/var/www/drupal',
-  $drupalversion                = '7.54',
+  $drupalversion                = '7.56',
   $updateall                    = false,                                   # all updates using drush up
   $updatesecurity               = true,                                    # only security updates
   $updatedrush                  = true,                                    # update drush and composer to latest version
   $drushversion                 = '8.x',
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
-# PHP Settings
+  $base_url                     = '',                                      # important when using SSL offloading!
+#  PHP Settings
   $php_memory_limit             = '128M',
   $upload_max_filesize          = '2M',
   $post_max_size                = '8M',
@@ -49,11 +50,11 @@ class role_drupal (
   $dbcollation                  = 'utf8mb4_general_ci',
 
 # Install profile settings
-  $install_profile_userepo      = true,
-  $install_profile              = 'naturalis',  # use standard for standard profile
+  $install_profile_userepo      = false,
+  $install_profile              = 'standard',  # use standard for standard profile
   $install_profile_repo         = 'git@github.com:naturalis/drupal_naturalis_installation_profile.git',
   $install_profile_repoversion  = 'present',
-  $install_profile_reposshauth  = true,
+  $install_profile_reposshauth  = false,
   $install_profile_repokey      = undef,
   $install_profile_repokeyname  = 'githubkey',
   $install_profile_repotype     = 'git',
@@ -92,11 +93,18 @@ class role_drupal (
                                 },
 ){
 
+  apt::key { 'ondrej':
+    id      => '14AA40EC0831756756D7F66C4F4EA0AAE5267A6C',
+    server  => 'pgp.mit.edu',
+    notify  => Exec['apt_update']
+  }
+
 # install php and configure php.ini
   class { '::php':
     ensure              => latest,
     composer            => false,
     manage_repos        => true,
+    require             => Apt::Key['ondrej'],
     extensions => {
       gd         => { 
         provider => 'apt',
