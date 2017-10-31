@@ -28,6 +28,8 @@ class role_drupal::ssl (
     letsencrypt::certonly { 'letsencrypt_cert':
       domains       => $role_drupal::letsencrypt_domains,
       manage_cron   => true,
+      cron_before_command => 'service apache2 stop',
+      cron_success_command => 'service apache2 start',
     }
   }
 }
