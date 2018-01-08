@@ -100,10 +100,14 @@ class role_drupal (
   }
 
 # install php and configure php.ini
+
+
+  class { 'php::repo::ubuntu':
+    version             => '7.0',
+  }->
   class { '::php':
     ensure              => latest,
     composer            => false,
-    manage_repos        => true,
     require             => Apt::Key['ondrej'],
     extensions => {
       gd         => { 
