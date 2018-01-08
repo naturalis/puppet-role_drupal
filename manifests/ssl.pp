@@ -20,6 +20,7 @@ class role_drupal::ssl (
 # install letsencrypt certs only and crontab
   if ($role_drupal::enableletsencrypt == true) {
     class { ::letsencrypt:
+      install_method => 'vcs',
       config => {
         email  => $role_drupal::letsencrypt_email,
         server => $role_drupal::letsencrypt_server,
