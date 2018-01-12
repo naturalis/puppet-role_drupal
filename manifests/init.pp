@@ -27,6 +27,7 @@ class role_drupal (
   $mysql_root_password          = 'rootpassword',
   $cron                         = true,
   $base_url                     = '',                                      # important when using SSL offloading!
+  $testscriptsdir               = '/opt/repo/scripts',
 #  PHP Settings
   $php_memory_limit             = '128M',
   $upload_max_filesize          = '2M',
@@ -257,5 +258,19 @@ class role_drupal (
   if ( $role_drupal::updatesecurity == true ) or ( $role_drupal::updateall == true ) {
       class { 'role_drupal::update':}
     }
+
+# install tests scripts and export as sensu check
+  file {'/usr/local/sbin/drupalchk.sh':
+    ensure                  => 'file',
+    mode                    => '0777',
+    content                 => template('role_drupal/drupalchk.sh.erb')
+  }
+
+# export check so sensu monitoring can make use of it
+  @@sensu::check { 'Check Drupal' :
+    command => '/usr/local/sbin/drupalchk.sh',
+    tag     => 'central_sensu',
+}
+
 }
 
