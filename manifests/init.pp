@@ -50,6 +50,15 @@ class role_drupal (
   $dbcharset                    = 'utf8mb4',
   $dbcollation                  = 'utf8mb4_general_ci',
 
+# sensu check settings
+  $checks_defaults    = {
+    interval      => 600,
+    occurrences   => 3,
+    refresh       => 60,
+    handlers      => ['drupal_mailer','default'],
+    subscribers   => ['appserver'],
+    standalone    => true },
+
 # Install profile settings
   $install_profile_userepo      = false,
   $install_profile              = 'standard',  # use standard for standard profile
@@ -268,8 +277,14 @@ class role_drupal (
 
 # export check so sensu monitoring can make use of it
   @@sensu::check { 'Check Drupal' :
-    command => '/usr/local/sbin/drupalchk.sh',
-    tag     => 'central_sensu',
+    command     => '/usr/local/sbin/drupalchk.sh',
+    interval    => $checks_defaults['interval'],
+    occurrences => $checks_defaults['occurrrences'],
+    refresh     => $checks_defaults['refresh'],
+    handlers    => $checks_defaults['handlers'],
+    subscribers => $checks_defaults['subscribers'],
+    standalone  => $checks_defaults['standalone'],
+    tag         => 'central_sensu',
 }
 
 }
