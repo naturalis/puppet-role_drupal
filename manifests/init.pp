@@ -22,6 +22,14 @@ class role_drupal (
   $composer_allow_superuser     = '1',
   $table_prefix                 = '',
   $base_path                    = '/data',
+  $drupal_version               = '7.59',
+  $drupal_md5                   = '7e09c6b177345a81439fe0aa9a2d15fc',
+  $base_url                     = '',
+  $protocol                     = 'http',
+  $base_domain                  = '',
+  $install_profile              = 'naturalis',
+  $web_external_port            = '80',
+  $dev                          = '0',
   $manageenv                    = 'no',
   $logrotate_hash               = { 'apache2'    => { 'log_path' => '/data/drupal/apachelog',
                                                       'post_rotate' => "(cd ${repo_dir}; docker-compose exec drupal service apache2 reload)",
@@ -37,7 +45,6 @@ class role_drupal (
   $updateall                    = false,                                   # all updates using drush up
   $updatesecurity               = true,                                    # only security updates
   $updatedrush                  = true,                                    # update drush and composer to latest version
-  $base_url                     = '',                                      # important when using SSL offloading!
   $testscriptsdir               = '/opt/repo/scripts',
 
 # sensu check settings
