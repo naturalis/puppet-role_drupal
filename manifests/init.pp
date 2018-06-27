@@ -11,7 +11,7 @@
 class role_drupal (
   $compose_version              = '1.17.1',
   $repo_source                  = 'https://github.com/naturalis/docker-drupal.git',
-  $repo_ensure                  = 'latest',
+  $repo_ensure                  = 'present',
   $repo_dir                     = '/opt/docker-drupal',
   $mysql_db                     = 'drupal',
   $mysql_host                   = 'db',
@@ -31,6 +31,9 @@ class role_drupal (
   $web_external_port            = '80',
   $dev                          = '0',
   $manageenv                    = 'no',
+  $caserver                     = 'https://acme-staging-v02.api.letsencrypt.org/directory',  # Default: "https://acme-v02.api.letsencrypt.org/directory"
+  $drupal_site_url              = 'test-drupal.naturalis.nl',
+  $drupal_sans_url              = ['test1-drupal.naturalis.nl','test2-drupal.naturalis.nl'],
   $logrotate_hash               = { 'apache2'    => { 'log_path' => '/data/drupal/apachelog',
                                                       'post_rotate' => "(cd ${repo_dir}; docker-compose exec drupal service apache2 reload)",
                                                       'extraline' => 'su root docker'},
@@ -93,6 +96,13 @@ class role_drupal (
     replace  => $role_drupal::manageenv,
     content  => template('role_drupal/my-drupal-client.cnf.erb'),
     require  => File['/data/drupal/mysqlconf'],
+  }
+
+ file { "${role_drupal::repo_dir}/traefik.toml" :
+    ensure   => file,
+    content  => template('role_drupal/traefik.toml.erb'),
+    require  => Vcsrepo[$role_drupal::repo_dir],
+    notify   => Exec['Restart containers on change'],
   }
 
   file { "${role_drupal::repo_dir}/.env":
