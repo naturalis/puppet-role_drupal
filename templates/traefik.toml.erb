@@ -13,9 +13,35 @@ defaultEntryPoints = ["http","https"]
     [entryPoints.https.tls]
 [retry]
 
+
+[api]
+  # Name of the related entry point
+  #
+  # Optional
+  # Default: "traefik"
+  #
+  entryPoint = "traefik"
+
+  # Enable Dashboard
+  #
+  # Optional
+  # Default: true
+  #
+  dashboard = true
+
+  # Enable debug mode.
+  # This will install HTTP handlers to expose Go expvars under /debug/vars and
+  # pprof profiling data under /debug/pprof/.
+  # Additionally, the log level will be set to DEBUG.
+  #
+  # Optional
+  # Default: false
+  #
+  debug = true
+
 [docker]
 endpoint = "unix:///var/run/docker.sock"
-domain = "<%= scope['role_drupal::drupal_site_url'] %>"
+domain = "naturalis.nl"
 watch = true
 exposedbydefault = false
 
@@ -29,6 +55,9 @@ onDemand = false
 
 [[acme.domains]]
   main = "<%= scope['role_drupal::drupal_site_url'] %>"
+  <% if !@drupal_sans_url.empty? %>
   sans = [<%= @drupal_sans_url.map { |e| "\"#{e}\"" }.join(',') %>]
+  <% end -%>
+
 [acme.httpChallenge]
 entryPoint = "http"

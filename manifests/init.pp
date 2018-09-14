@@ -24,6 +24,7 @@ class role_drupal (
   $base_path                    = '/data',
   $drupal_version               = '7.59',
   $drupal_md5                   = '7e09c6b177345a81439fe0aa9a2d15fc',
+  $drush_version                = '8.1',
   $base_url                     = '',
   $protocol                     = 'http',
   $base_domain                  = '',
@@ -69,7 +70,7 @@ class role_drupal (
     cwd  => $role_drupal::repo_dir,
   }
 
-  file { ['/data','/data/drupal','/data/drupal/initdb','/data/drupal/mysqlconf','/data/drupal/apachelog','/data/drupal/mysqllog','/opt/traefik'] :
+  file { ['/data','/data/config','/data/drupal','/data/drupal/initdb','/data/drupal/mysqlconf','/data/drupal/apachelog','/data/drupal/mysqllog','/opt/traefik'] :
     ensure              => directory,
     owner               => 'root',
     group               => 'docker',
@@ -80,6 +81,13 @@ class role_drupal (
   file { $role_drupal::repo_dir:
     ensure              => directory,
     mode                => '0770',
+  }
+
+  file { '/data/config/settings.php':
+    ensure   => file,
+    mode     => '0644',
+    content  => template('role_drupal/settings.erb'),
+    require  => File['/data/config'],
   }
 
   file { '/data/drupal/mysqlconf/my-drupal.cnf':
@@ -114,6 +122,13 @@ class role_drupal (
     notify   => Exec['Restart containers on change'],
   }
 
+  file { "${role_drupal::repo_dir}/acme.json":
+    ensure   => file,
+    mode     => '0600',
+    require  => Vcsrepo[$role_drupal::repo_dir],
+  }
+
+
   class {'docker::compose': 
     ensure      => present,
     version     => $role_drupal::compose_version,
@@ -140,6 +155,7 @@ class role_drupal (
     require     => [
       Vcsrepo[$role_drupal::repo_dir],
       Docker_network['web'],
+      File["${role_drupal::repo_dir}/acme.json"],
       File["${role_drupal::repo_dir}/.env"]
     ]
   }
