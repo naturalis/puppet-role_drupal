@@ -168,7 +168,10 @@ class role_drupal (
   exec { 'Up the containers to resolve updates' :
     command  => 'docker-compose up -d',
     schedule => 'everyday',
-    require  => Exec['Pull containers']
+    require  => [
+      Exec['Pull containers'],
+      Docker_compose["${role_drupal::repo_dir}/docker-compose.yml"]
+    ]
   }
 
   exec {'Restart containers on change':
