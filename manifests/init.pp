@@ -32,9 +32,13 @@ class role_drupal (
   $web_external_port            = '80',
   $dev                          = '0',
   $manageenv                    = 'no',
-  $caserver                     = 'https://acme-staging-v02.api.letsencrypt.org/directory',  # Default: "https://acme-v02.api.letsencrypt.org/directory"
+  $enable_ssl                   = true,
+  $letsencrypt_certs            = true,
+  $traefik_whitelist            = false,
+  $traefik_whitelist_array      = ['172.16.0.0/16','192.168.1.0/24'],
+  $custom_ssl_certfile         = '/etc/ssl/customcert.pem',
+  $custom_ssl_certkey          = '/etc/ssl/customkey.pem',
   $drupal_site_url              = 'test-drupal.naturalis.nl',
-  $drupal_sans_url              = ['test1-drupal.naturalis.nl','test2-drupal.naturalis.nl'],
   $logrotate_hash               = { 'apache2'    => { 'log_path' => '/data/drupal/apachelog',
                                                       'post_rotate' => "(cd ${repo_dir}; docker-compose exec drupal service apache2 reload)",
                                                       'extraline' => 'su root docker'},
@@ -73,7 +77,7 @@ class role_drupal (
   file { ['/data','/data/config','/data/drupal','/data/drupal/initdb','/data/drupal/mysqlconf','/data/drupal/apachelog','/data/drupal/mysqllog','/opt/traefik'] :
     ensure              => directory,
     owner               => 'root',
-    group               => 'docker',
+    group               => 'wheel',
     mode                => '0770',
     require             => Class['docker'],
   }
@@ -106,11 +110,20 @@ class role_drupal (
     require  => File['/data/drupal/mysqlconf'],
   }
 
+# define ssl certificate location
+  if ( $letsencrypt_certs == true ) {
+    $ssl_certfile = "/etc/letsencrypt/live/${drupal_site_url}/fullchain.pem"
+    $ssl_certkey = "/etc/letsencrypt/live/${drupal_site_url}/privkey.pem"
+  }else{
+    $ssl_certfile = $custom_ssl_certfile
+    $ssl_certkey = $custom_ssl_certkey
+  }
+
  file { "${role_drupal::repo_dir}/traefik.toml" :
     ensure   => file,
     content  => template('role_drupal/traefik.toml.erb'),
     require  => Vcsrepo[$role_drupal::repo_dir],
-    notify   => Exec['Restart containers on change'],
+    notify   => Exec['Restart traefik on change'],
   }
 
   file { "${role_drupal::repo_dir}/.env":
@@ -122,17 +135,11 @@ class role_drupal (
     notify   => Exec['Restart containers on change'],
   }
 
-  file { "${role_drupal::repo_dir}/acme.json":
-    ensure   => file,
-    mode     => '0600',
-    require  => Vcsrepo[$role_drupal::repo_dir],
-  }
-
-
   class {'docker::compose': 
     ensure      => present,
     version     => $role_drupal::compose_version,
-    notify      => Exec['apt_update']
+    notify      => Exec['apt_update'],
+    require     => File["${role_drupal::repo_dir}/.env"]
   }
 
   docker_network { 'web':
@@ -155,7 +162,6 @@ class role_drupal (
     require     => [
       Vcsrepo[$role_drupal::repo_dir],
       Docker_network['web'],
-      File["${role_drupal::repo_dir}/acme.json"],
       File["${role_drupal::repo_dir}/.env"]
     ]
   }
@@ -177,6 +183,12 @@ class role_drupal (
   exec {'Restart containers on change':
     refreshonly => true,
     command     => 'docker-compose up -d',
+    require     => Docker_compose["${role_drupal::repo_dir}/docker-compose.yml"]
+  }
+
+  exec {'Restart traefik on change':
+    refreshonly => true,
+    command     => 'docker-compose restart traefik',
     require     => Docker_compose["${role_drupal::repo_dir}/docker-compose.yml"]
   }
 
@@ -213,7 +225,6 @@ class role_drupal (
     subscribers => $checks_defaults['subscribers'],
     standalone  => $checks_defaults['standalone'],
     tag         => 'central_sensu',
-}
+  }
 
 }
-3
