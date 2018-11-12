@@ -36,13 +36,13 @@ class role_drupal (
   $letsencrypt_certs            = true,
   $traefik_whitelist            = false,
   $traefik_whitelist_array      = ['172.16.0.0/12'],
-  $custom_ssl_certfile         = '/etc/ssl/customcert.pem',
-  $custom_ssl_certkey          = '/etc/ssl/customkey.pem',
-  $drupal_site_url              = 'test-drupal.naturalis.nl',
-  $logrotate_hash               = { 'apache2'    => { 'log_path' => '/data/drupal/apachelog',
+  $custom_ssl_certfile          = '/etc/ssl/customcert.pem',
+  $custom_ssl_certkey           = '/etc/ssl/customkey.pem',
+  $drupal_site_url_array        = ['test-drupal.naturalis.nl','www.test-drupal.naturalis.nl'],  # first site will be used for traefik certificate
+  $logrotate_hash               = { 'apache2'    => { 'log_path' => '/data/www/log/apache2',
                                                       'post_rotate' => "(cd ${repo_dir}; docker-compose exec drupal service apache2 reload)",
                                                       'extraline' => 'su root docker'},
-                                    'mysql'      => { 'log_path' => '/data/drupal/mysqllog',
+                                    'mysql'      => { 'log_path' => '/data/database/mysqllog',
                                                       'post_rotate' => "(cd ${repo_dir}; docker-compose exec db mysqladmin flush-logs)",
                                                       'extraline' => 'su root docker'},
                                     'drupal'   => { 'log_path' => '/data/drupal/www/log',
@@ -70,15 +70,15 @@ class role_drupal (
   include 'stdlib'
 
   Exec {
-    path => '/usr/local/bin/',
+    path => ['/usr/local/bin/','/usr/bin','/bin'],
     cwd  => $role_drupal::repo_dir,
   }
 
-  file { ['/data','/data/config','/data/drupal','/data/drupal/initdb','/data/drupal/mysqlconf','/data/drupal/apachelog','/data/drupal/mysqllog','/opt/traefik'] :
+  file { ['/data','/data/config','/data/drupal','/data/database','/data/database/mysqlconf'] :
     ensure              => directory,
     owner               => 'root',
     group               => 'wheel',
-    mode                => '0770',
+    mode                => '0775',
     require             => Class['docker'],
   }
 
@@ -94,26 +94,26 @@ class role_drupal (
     require  => File['/data/config'],
   }
 
-  file { '/data/drupal/mysqlconf/my-drupal.cnf':
+  file { '/data/database/mysqlconf/my-drupal.cnf':
     ensure   => file,
     mode     => '0644',
     replace  => $role_drupal::manageenv,
     content  => template('role_drupal/my-drupal.cnf.erb'),
-    require  => File['/data/drupal/mysqlconf'],
+    require  => File['/data/database/mysqlconf'],
   }
 
-  file { '/data/drupal/mysqlconf/my-drupal-client.cnf':
+  file { '/data/database/mysqlconf/my-drupal-client.cnf':
     ensure   => file,
     mode     => '0600',
     replace  => $role_drupal::manageenv,
     content  => template('role_drupal/my-drupal-client.cnf.erb'),
-    require  => File['/data/drupal/mysqlconf'],
+    require  => File['/data/database/mysqlconf'],
   }
 
 # define ssl certificate location
   if ( $letsencrypt_certs == true ) {
-    $ssl_certfile = "/etc/letsencrypt/live/${drupal_site_url}/fullchain.pem"
-    $ssl_certkey = "/etc/letsencrypt/live/${drupal_site_url}/privkey.pem"
+    $ssl_certfile = "/etc/letsencrypt/live/${drupal_site_url_array[0]}/fullchain.pem"
+    $ssl_certkey = "/etc/letsencrypt/live/${drupal_site_url_array[0]}/privkey.pem"
   }else{
     $ssl_certfile = $custom_ssl_certfile
     $ssl_certkey = $custom_ssl_certkey
@@ -157,14 +157,15 @@ class role_drupal (
     require   => [Package['git'],File[$role_drupal::repo_dir]]
   }
 
-  docker_compose { "${role_drupal::repo_dir}/docker-compose.yml":
-    ensure      => present,
-    require     => [
-      Vcsrepo[$role_drupal::repo_dir],
-      Docker_network['web'],
-      File["${role_drupal::repo_dir}/.env"]
-    ]
-  }
+#  docker_compose { "${role_drupal::repo_dir}/docker-compose.yml":
+#    ensure      => present,
+#    options     => "-p ${role_drupal::repo_dir} ",
+#    require     => [
+#      Vcsrepo[$role_drupal::repo_dir],
+#      Docker_network['web'],
+#      File["${role_drupal::repo_dir}/.env"]
+#    ]
+#  }
 
   exec { 'Pull containers' :
     command  => 'docker-compose pull',
@@ -176,22 +177,42 @@ class role_drupal (
     schedule => 'everyday',
     require  => [
       Exec['Pull containers'],
-      Docker_compose["${role_drupal::repo_dir}/docker-compose.yml"]
+      Vcsrepo[$role_drupal::repo_dir],
+      Docker_network['web'],
+      File["${role_drupal::repo_dir}/.env"]
     ]
   }
 
   exec {'Restart containers on change':
     refreshonly => true,
     command     => 'docker-compose up -d',
-    require     => Docker_compose["${role_drupal::repo_dir}/docker-compose.yml"]
+    require     => [
+      Vcsrepo[$role_drupal::repo_dir],
+      Docker_network['web'],
+      File["${role_drupal::repo_dir}/.env"]
+    ]
   }
 
   exec {'Restart traefik on change':
     refreshonly => true,
     command     => 'docker-compose restart traefik',
-    require     => Docker_compose["${role_drupal::repo_dir}/docker-compose.yml"]
+    require     => [
+      Vcsrepo[$role_drupal::repo_dir],
+      Docker_network['web'],
+      File["${role_drupal::repo_dir}/.env"]
+    ]
   }
 
+  exec {'Start containers if none are running':
+    command     => 'docker-compose up -d',
+    onlyif      => 'docker-compose ps | wc -l | grep -c 2',
+    require     => [
+      Vcsrepo[$role_drupal::repo_dir],
+      Docker_network['web'],
+      File["${role_drupal::repo_dir}/.env"]
+    ]
+  }
+  
   # deze gaat per dag 1 keer checken
   # je kan ook een range aan geven, bv tussen 7 en 9 's ochtends
   schedule { 'everyday':
