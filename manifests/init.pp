@@ -236,9 +236,15 @@ class role_drupal (
     content                 => template('role_drupal/drupalchk.sh.erb')
   }
 
+# add sudoers rule for running drupalchk
+  file_line {"Add password less sudo entry for check":
+    path   => '/etc/sudoers',
+    line   => 'sensu ALL = (root) NOPASSWD : /usr/local/sbin/drupalchk.sh'
+  }
+
 # export check so sensu monitoring can make use of it
   @@sensu::check { 'Check Drupal' :
-    command     => '/usr/local/sbin/drupalchk.sh',
+    command     => 'sudo /usr/local/sbin/drupalchk.sh',
     interval    => $checks_defaults['interval'],
     occurrences => $checks_defaults['occurrrences'],
     refresh     => $checks_defaults['refresh'],
