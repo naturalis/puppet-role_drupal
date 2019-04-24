@@ -36,8 +36,10 @@ class role_drupal (
   $letsencrypt_certs            = true,
   $traefik_whitelist            = false,
   $traefik_whitelist_array      = ['172.16.0.0/12'],
-  $custom_ssl_certfile          = '/etc/ssl/customcert.pem',
-  $custom_ssl_certkey           = '/etc/ssl/customkey.pem',
+# cert hash = location to cert
+  $traefik_cert_hash            = { '/etc/letsencrypt/live/site1.site.org/fullchain.pem' =>  '/etc/letsencrypt/live/site1.site.org/privkey.pem',
+                                    '/etc/letsencrypt/live/site2.site.org/fullchain.pem' =>  '/etc/letsencrypt/live/site2.site.org/privkey.pem',
+                                  },
   $drupal_site_url_array        = ['test-drupal.naturalis.nl','www.test-drupal.naturalis.nl'],  # first site will be used for traefik certificate
   $logrotate_hash               = { 'apache2'    => { 'log_path' => '/data/www/log/apache2',
                                                       'post_rotate' => "(cd ${repo_dir}; docker-compose exec drupal service apache2 reload)",
@@ -108,15 +110,6 @@ class role_drupal (
     replace  => $role_drupal::manageenv,
     content  => template('role_drupal/my-drupal-client.cnf.erb'),
     require  => File['/data/database/mysqlconf'],
-  }
-
-# define ssl certificate location
-  if ( $letsencrypt_certs == true ) {
-    $ssl_certfile = "/etc/letsencrypt/live/${drupal_site_url_array[0]}/fullchain.pem"
-    $ssl_certkey = "/etc/letsencrypt/live/${drupal_site_url_array[0]}/privkey.pem"
-  }else{
-    $ssl_certfile = $custom_ssl_certfile
-    $ssl_certkey = $custom_ssl_certkey
   }
 
  file { "${role_drupal::repo_dir}/traefik.toml" :

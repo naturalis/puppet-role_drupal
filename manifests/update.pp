@@ -10,7 +10,7 @@ class role_drupal::update (
 
   if ( $role_drupal::updateall == true ) {
     exec { 'update_all':
-      command   => 'docker-compose exec -T drupal drush up --no-backup -y',
+      command   => 'docker-compose exec -T drupal /bin/bash -c \'drush up -y && drush rr && rm -rf /root/drush-backups \'',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
       cwd       => $role_drupal::repo_dir,
       provider  => shell,
@@ -18,7 +18,7 @@ class role_drupal::update (
       onlyif    => 'docker-compose exec -T drupal drush pm-updatestatus | grep -c "Update available"'
     }
     exec { 'update_security':
-      command   => 'docker-compose exec -T drupal drush up --no-backup -y',
+      command   => 'docker-compose exec -T drupal /bin/bash -c \'drush up -y && drush rr && rm -rf /root/drush-backups \'',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
       provider  => shell,
       cwd       => $role_drupal::repo_dir,
@@ -27,7 +27,7 @@ class role_drupal::update (
     }
   } else {
     exec { 'update_security':
-      command   => 'docker-compose exec -T drupal drush up --no-backup -y',
+      command   => 'docker-compose exec -T drupal /bin/bash -c \'drush up -y && drush rr && rm -rf /root/drush-backups \'',
       path      => '/sbin:/usr/bin:/usr/local/bin/:/bin/',
       provider  => shell,
       cwd       => $role_drupal::repo_dir,
