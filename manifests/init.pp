@@ -146,7 +146,7 @@ class role_drupal (
     source    => $role_drupal::repo_source,
     provider  => 'git',
     user      => 'root',
-    revision  => 'master',
+    revision  => '0.0.1',
     require   => [Package['git'],File[$role_drupal::repo_dir]]
   }
 
