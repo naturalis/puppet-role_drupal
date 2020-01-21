@@ -165,6 +165,11 @@ class role_drupal (
     schedule => 'everyday',
   }
 
+  exec { 'Docker system prune' :
+    command  => 'docker system prune -af',
+    schedule => 'everyday',
+  }
+
   exec { 'Up the containers to resolve updates' :
     command  => 'docker-compose up -d',
     schedule => 'everyday',
